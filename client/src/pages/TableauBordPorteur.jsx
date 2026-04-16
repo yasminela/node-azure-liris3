@@ -393,7 +393,7 @@ function TableauBordPorteur({ user, onLogout }) {
                           <Icon name="business" size={16} color={iconColors.primary} />
                           <strong>{p.titre || p.nomProjet}</strong>
                         </div>
-                       </td>
+                      </td>
                       <td style={styles.td}>{p.description || '—'}</td>
                       <td style={styles.td}>{getStatutBadge(p.statut)}</td>
                       <td style={styles.td}>
