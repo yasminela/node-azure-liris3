@@ -7,6 +7,7 @@ import CreerProjet from '../composants/CreerProjet';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import Icon from '../composants/Icon';
 import { iconColors } from '../styles/iconColors';
+import FooterPartners from '../composants/PiedDePage';
 
 function TableauBordPorteur({ user, onLogout }) {
   const [projets, setProjets] = useState([]);
@@ -510,6 +511,7 @@ function TableauBordPorteur({ user, onLogout }) {
             <button style={styles.modalBtn} onClick={() => setShowTimelineDetail(null)}>
               Fermer
             </button>
+            <PiedDePage />
           </div>
         </div>
       )}

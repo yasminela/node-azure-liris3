@@ -10,6 +10,7 @@ import AssignerEtapes from '../composants/AssignerEtapes';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import Icon from '../composants/Icon';
 import { iconColors } from '../styles/iconColors';
+import PiedDePage from '../composants/PiedDePage';
 
 function TableauBordAdmin({ user, onLogout }) {
   const [stats, setStats] = useState({ projets: 0, porteurs: 0, soumissions: 0 });
@@ -143,10 +144,12 @@ function TableauBordAdmin({ user, onLogout }) {
       opacity: 0.8,
       marginTop: '8px'
     },
-    welcomeImage: { 
-      height: '80px', 
-      borderRadius: '10px',
-      objectFit: 'contain'
+      welcomeImage: { 
+    width: '480px',
+    height: 'auto',
+    maxHeight: '400px', 
+    borderRadius: '16px',
+    objectFit: 'contain'
     },
     statsContainer: {
       display: 'grid',
@@ -610,6 +613,7 @@ function TableauBordAdmin({ user, onLogout }) {
           onSuccess={() => { loadAllData(); }} 
         />
       )}
+      <PiedDePage />
     </div>
   );
 }
