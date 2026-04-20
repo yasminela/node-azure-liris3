@@ -12,28 +12,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Configuration CORS pour accepter Vercel
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://incubiny.vercel.app',  // Ton futur frontend Vercel
-  'https://incubiny-frontend.vercel.app', // Alternative
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
+//  Configuration CORS CORRECTE pour Vercel
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      console.log('CORS bloqué pour:', origin);
-      callback(new Error('Non autorisé par CORS'));
-    }
-  },
+  origin: [
+    'http://localhost:3000',
+    'https://final-v-incubiny.vercel.app',
+    'https://final-v-incubiny.vencel.app',  // Note l'erreur de frappe (vencel au lieu de vercel)
+    'https://incubiny.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Pour les requêtes OPTIONS (préflight)
+app.options('*', cors());
 
 app.use(express.json());
 app.use('/telechargements', express.static(path.join(__dirname, 'telechargements')));
