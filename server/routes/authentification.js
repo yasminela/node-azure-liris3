@@ -5,8 +5,16 @@ import Utilisateur from '../models/Utilisateur.js';
 
 const router = express.Router();
 
+// Route de test GET (pour vérifier que la route fonctionne)
+router.get('/test', (req, res) => {
+  res.json({ message: 'Route auth fonctionnelle', status: 'OK' });
+});
+
 router.post('/login', async (req, res) => {
   try {
+
+    console.log('📩 Requête reçue:', req.body);
+
     const { email, motDePasse } = req.body;
     
     const user = await Utilisateur.findOne({ email });
@@ -15,6 +23,9 @@ router.post('/login', async (req, res) => {
     }
     
     const valid = await bcrypt.compare(motDePasse, user.password);
+
+    console.log('🔐 Mot de passe valide:', valid);
+    
     if (!valid) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }

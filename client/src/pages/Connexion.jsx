@@ -27,9 +27,10 @@ function Connexion({ onLogin }) {
       setLoading(false);
     }
   };
-
+  
   // Liste des icônes pour l'arrière-plan - OPACITÉ AUGMENTÉE
   const backgroundIcons = [
+    { name: 'globe', color: '#c7d2fe', size: 54, top: '10%', left: '50%', opacity: 0.18, rotation: 10 },
     { name: 'rocket', color: '#ffffff', size: 55, top: '5%', left: '5%', opacity: 0.25, rotation: -15 },
     { name: 'lightbulb', color: '#fef08a', size: 45, top: '12%', left: '85%', opacity: 0.22, rotation: 10 },
     { name: 'users', color: '#ffffff', size: 60, top: '20%', left: '8%', opacity: 0.2, rotation: 5 },
@@ -83,7 +84,10 @@ function Connexion({ onLogin }) {
       fontSize: size,
       opacity,
       transform: `rotate(${rotation}deg)`,
-      animation: `float ${3 + Math.random() * 2}s ease-in-out infinite`,
+      animationName: 'float',
+      animationDuration: `${3 + Math.random() * 2}s`,
+      animationTimingFunction: 'ease-in-out',
+      animationIterationCount: 'infinite',
       animationDelay: `${delay}s`,
       filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
       transition: 'all 0.3s ease'
