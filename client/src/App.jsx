@@ -41,24 +41,12 @@ function App() {
     return <div style={{ textAlign: 'center', marginTop: '50px' }}>Chargement...</div>;
   }
 
-  return (
+ return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
-      
-      <Route path="/" element={user ? (
-        user.role === 'admin' ? 
-          <TableauBordAdmin user={user} onLogout={handleLogout} /> : 
-          <TableauBordPorteur user={user} onLogout={handleLogout} />
-      ) : <Navigate to="/login" />} />
-      
-      <Route path="/calendrier" element={user ? <Calendrier /> : <Navigate to="/login" />} />
-      
-      <Route path="/etapes" element={user ? <SuiviEtapes /> : <Navigate to="/login" />} />
-      
-      {/* Redirection pour les routes inexistantes */}
+      <Route path="/" element={user ? (user.role === 'admin' ? <TableauBordAdmin user={user} onLogout={handleLogout} /> : <TableauBordPorteur user={user} onLogout={handleLogout} />) : <Navigate to="/login" />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }
-
 export default App;
