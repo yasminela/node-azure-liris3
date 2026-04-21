@@ -17,7 +17,9 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://final-v-incubiny.vercel.app',
-    'https://incubiny.vercel.app'
+    'https://incubiny.vercel.app',
+    'https://incubiny-ez8vcu9xn-yasminelajdel-2575s-projects.vercel.app' 
+
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
