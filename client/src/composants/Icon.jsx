@@ -58,6 +58,8 @@ const iconMap = {
   user_add: faUserPlus,
   user_edit: faUserEdit,
   user_delete: faUserMinus,
+  logout: faSignOutAlt,
+
   
   // Fichiers
   folder: faFolder,

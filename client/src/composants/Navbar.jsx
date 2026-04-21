@@ -1,14 +1,22 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';  // Ajoute useNavigate
 import NotificationPopup from './NotificationPopup';
 import Icon from './Icon';
 import { iconColors } from '../styles/iconColors';
 
 function Navbar({ user, onLogout }) {
+  const navigate = useNavigate();  // Utilise useNavigate
+  
   const handleLogout = () => {
+    // Supprimer les données du localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Appeler la fonction onLogout du parent
     if (onLogout) onLogout();
-    window.location.href = '/login';
+    
+    // Rediriger vers la page de connexion
+    navigate('/login');  // Utilise navigate au lieu de window.location
   };
 
   const styles = {
@@ -34,7 +42,8 @@ function Navbar({ user, onLogout }) {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      transition: 'transform 0.2s'
     }
   };
 
@@ -50,7 +59,12 @@ function Navbar({ user, onLogout }) {
           <Icon name="user" size={20} color={iconColors.primary} />
           <span style={styles.userEmail}>{user?.email}</span>
         </div>
-        <button onClick={handleLogout} style={styles.logoutBtn}>
+        <button 
+          onClick={handleLogout} 
+          style={styles.logoutBtn}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        >
           <Icon name="logout" size={16} color={iconColors.white} />
           Déconnexion
         </button>
