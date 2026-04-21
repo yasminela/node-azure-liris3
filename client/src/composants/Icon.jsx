@@ -1,13 +1,20 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUser, faUsers, faUserPlus, faUserEdit, faUserMinus, faGlobe,  faChartBar,
+  // Utilisateurs
+  faUser, faUsers, faUserPlus, faUserEdit, faUserMinus,
+  // Fichiers
   faFolder, faFolderOpen, faFile, faFileUpload, faFileDownload,
+  // Actions
   faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,
   faCheck, faCheckCircle, faTimes, faTimesCircle,
   faExclamationCircle, faExclamationTriangle, faInfoCircle,
   faBell, faBellSlash, faEnvelope, faEnvelopeOpen,
-  faCalendar, faCalendarAlt, faClock, faChartBar, faChartLine,
+  // Calendrier & Temps
+  faCalendar, faCalendarAlt, faClock,
+  // Graphiques
+  faChartBar, faChartLine,
+  // Navigation
   faHome, faCog, faTachometerAlt, faBriefcase, faRocket,
   faLightbulb, faCalculator, faPaintbrush, faTrophy, faBullseye,
   faLock, faUnlock, faEye, faEyeSlash, faPaperPlane,
@@ -16,10 +23,12 @@ import {
   faArrowLeft, faArrowRight, faSignOutAlt, faSignInAlt,
   faHeart, faMapMarkerAlt, faPhone, faCommentDots,
   faSave, faCopy, faClipboard, faMoneyBill, faCreditCard,
-  faGraduationCap, faBusinessTime, faUsers as faUsersSolid,
-  faClipboardList, faTasks
+  faGraduationCap, faBusinessTime, faGlobe, faNetworkWired,
+  // Réseaux sociaux
+  faLinkedin, faTwitter, faFacebook, faInstagram, faGithub
 } from '@fortawesome/free-solid-svg-icons';
 
+// Regular icons
 import {
   faBell as farBell,
   faEnvelope as farEnvelope,
@@ -35,18 +44,15 @@ import {
 const iconMap = {
   // Utilisateurs
   user: faUser,
-  users: faUsersSolid,
-  users_alt: faUsersSolid,
+  users: faUsers,
+  users_alt: faUsers,
   person: faUser,
-  group: faUsersSolid,
-  globe: faGlobe,
+  group: faUsers,
   user_add: faUserPlus,
   user_edit: faUserEdit,
   user_delete: faUserMinus,
-  chart: faChartBar,
-
   
-  // Fichiers et dossiers
+  // Fichiers
   folder: faFolder,
   folder_open: faFolderOpen,
   file: faFile,
@@ -92,8 +98,8 @@ const iconMap = {
   development: faChartLine,
   learning: faGraduationCap,
   startups: faRocket,
-  collab: faUsersSolid,
-  collab_n: faUsersSolid,
+  collab: faUsers,
+  collab_n: faUsers,
   
   // Notifications
   notification: faBell,
@@ -130,6 +136,11 @@ const iconMap = {
   
   // Graphiques
   bar_chart: faChartBar,
+  chart: faChartBar,
+  
+  // Réseaux
+  network: faNetworkWired,
+  globe: faGlobe,
   
   // Autres
   heart: faHeart,
@@ -138,16 +149,22 @@ const iconMap = {
   login: faSignInAlt,
   search: faSearch,
   filter: faFilter,
-  award: faTrophy, 
-
+  
   // Tâches
   task_checklist: faCheckCircle,
-  assignment: faClipboardList,
+  assignment: faClipboard,
   waiting_assignment: faClock,
   
   // Finance
   budget: faMoneyBill,
-  payments: faCreditCard
+  payments: faCreditCard,
+  
+  // Réseaux sociaux
+  linkedin: faLinkedin,
+  twitter: faTwitter,
+  facebook: faFacebook,
+  instagram: faInstagram,
+  github: faGithub
 };
 
 function Icon({ name, size = 24, color = "currentColor", className = "", style = {} }) {
@@ -155,7 +172,7 @@ function Icon({ name, size = 24, color = "currentColor", className = "", style =
   
   if (!icon) {
     console.warn(`Icon "${name}" not found`);
-    return <span style={{ fontSize: size, color }}></span>;
+    return <span style={{ fontSize: size, color }}>🔍</span>;
   }
   
   return (
