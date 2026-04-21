@@ -1,20 +1,15 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  // Utilisateurs
+  // Solid icons
   faUser, faUsers, faUserPlus, faUserEdit, faUserMinus,
-  // Fichiers
   faFolder, faFolderOpen, faFile, faFileUpload, faFileDownload,
-  // Actions
   faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,
   faCheck, faCheckCircle, faTimes, faTimesCircle,
   faExclamationCircle, faExclamationTriangle, faInfoCircle,
   faBell, faBellSlash, faEnvelope, faEnvelopeOpen,
-  // Calendrier & Temps
   faCalendar, faCalendarAlt, faClock,
-  // Graphiques
   faChartBar, faChartLine,
-  // Navigation
   faHome, faCog, faTachometerAlt, faBriefcase, faRocket,
   faLightbulb, faCalculator, faPaintbrush, faTrophy, faBullseye,
   faLock, faUnlock, faEye, faEyeSlash, faPaperPlane,
@@ -23,10 +18,17 @@ import {
   faArrowLeft, faArrowRight, faSignOutAlt, faSignInAlt,
   faHeart, faMapMarkerAlt, faPhone, faCommentDots,
   faSave, faCopy, faClipboard, faMoneyBill, faCreditCard,
-  faGraduationCap, faBusinessTime, faGlobe, faNetworkWired,
-  // Réseaux sociaux
-  faLinkedin, faTwitter, faFacebook, faInstagram, faGithub
+  faGraduationCap, faBusinessTime, faGlobe, faNetworkWired
 } from '@fortawesome/free-solid-svg-icons';
+
+// Brand icons (réseaux sociaux)
+import {
+  faLinkedin,
+  faTwitter,
+  faFacebook,
+  faInstagram,
+  faGithub
+} from '@fortawesome/free-brands-svg-icons';
 
 // Regular icons
 import {
@@ -142,6 +144,13 @@ const iconMap = {
   network: faNetworkWired,
   globe: faGlobe,
   
+  // Réseaux sociaux (brands)
+  linkedin: faLinkedin,
+  twitter: faTwitter,
+  facebook: faFacebook,
+  instagram: faInstagram,
+  github: faGithub,
+  
   // Autres
   heart: faHeart,
   marker: faMapMarkerAlt,
@@ -157,14 +166,7 @@ const iconMap = {
   
   // Finance
   budget: faMoneyBill,
-  payments: faCreditCard,
-  
-  // Réseaux sociaux
-  linkedin: faLinkedin,
-  twitter: faTwitter,
-  facebook: faFacebook,
-  instagram: faInstagram,
-  github: faGithub
+  payments: faCreditCard
 };
 
 function Icon({ name, size = 24, color = "currentColor", className = "", style = {} }) {
