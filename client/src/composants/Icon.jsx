@@ -162,7 +162,6 @@ const iconMap = {
   // Autres
   heart: faHeart,
   marker: faMapMarkerAlt,
-  logout: faSignOutAlt,
   login: faSignInAlt,
   search: faSearch,
   filter: faFilter,
