@@ -16,7 +16,7 @@ function Navbar({ user, onLogout }) {
     if (onLogout) onLogout();
     
     // Rediriger vers la page de connexion
-    window.location.href = '/login';  // Utilise navigate au lieu de window.location
+    window.location.href = '/#/login';  // Utilise navigate au lieu de window.location
   };
 
   const styles = {
