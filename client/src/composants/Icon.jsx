@@ -1,15 +1,20 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  // Solid icons
+  // Utilisateurs
   faUser, faUsers, faUserPlus, faUserEdit, faUserMinus,
+  // Fichiers
   faFolder, faFolderOpen, faFile, faFileUpload, faFileDownload,
+  // Actions
   faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,
   faCheck, faCheckCircle, faTimes, faTimesCircle,
   faExclamationCircle, faExclamationTriangle, faInfoCircle,
   faBell, faBellSlash, faEnvelope, faEnvelopeOpen,
+  // Calendrier & Temps
   faCalendar, faCalendarAlt, faClock,
+  // Graphiques
   faChartBar, faChartLine,
+  // Navigation
   faHome, faCog, faTachometerAlt, faBriefcase, faRocket,
   faLightbulb, faCalculator, faPaintbrush, faTrophy, faBullseye,
   faLock, faUnlock, faEye, faEyeSlash, faPaperPlane,
@@ -94,6 +99,7 @@ const iconMap = {
   calculator: faCalculator,
   brush: faPaintbrush,
   trophy: faTrophy,
+  award: faTrophy,  // ✅ Ajout de award comme alias
   target: faBullseye,
   lock: faLock,
   unlock: faUnlock,

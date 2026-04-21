@@ -3,8 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Connexion from './pages/Connexion';
 import TableauBordPorteur from './pages/TableauBordPorteur';
 import TableauBordAdmin from './pages/TableauBordAdmin';
-import Calendrier from './composants/Calendrier';
-import SuiviEtapes from './composants/SuiviEtapes';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -13,7 +11,6 @@ function App() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
     if (storedUser && token && storedUser !== 'undefined') {
       try {
         setUser(JSON.parse(storedUser));
@@ -41,15 +38,21 @@ function App() {
     return <div style={{ textAlign: 'center', marginTop: '50px' }}>Chargement...</div>;
   }
 
- return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Connexion onLogin={handleLogin} />} />
-        <Route path="/" element={user ? (user.role === 'admin' ? <TableauBordAdmin user={user} onLogout={handleLogout} /> : <TableauBordPorteur user={user} onLogout={handleLogout} />) : <Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+  return (
+    <Routes>
+      <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
+      <Route path="/" element={
+        user ? (
+          user.role === 'admin' ? 
+            <TableauBordAdmin user={user} onLogout={handleLogout} /> : 
+            <TableauBordPorteur user={user} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/login" />
+        )
+      } />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
-} 
+}
 
 export default App;
