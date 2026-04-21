@@ -12,19 +12,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-//  Configuration CORS CORRECTE
+//  Configuration CORS complète et définitive
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-     'http://localhost:4173',
-    'https://final-v-incubiny.vercel.app',
-    'https://incubiny.vercel.app',
-    'https://incubiny-ez8vcu9xn-yasminelajdel-2575s-projects.vercel.app' 
-
-  ],
+  origin: '*',  // ⚠️ Temporairement pour tester - à restreindre ensuite
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 //  Pour les requêtes OPTIONS (préflight)
