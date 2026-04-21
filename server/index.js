@@ -12,12 +12,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-//  Configuration CORS CORRECTE pour Vercel
+//  Configuration CORS CORRECTE
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://final-v-incubiny.vercel.app',
-    'https://final-v-incubiny.vencel.app',  // Note l'erreur de frappe (vencel au lieu de vercel)
     'https://incubiny.vercel.app'
   ],
   credentials: true,
@@ -25,7 +24,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Pour les requêtes OPTIONS (préflight)
+//  Pour les requêtes OPTIONS (préflight)
 app.options('*', cors());
 
 app.use(express.json());
