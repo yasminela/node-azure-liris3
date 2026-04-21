@@ -1,7 +1,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUser, faUsers, faUserPlus, faUserEdit, faUserMinus, faGlobe,
+  faUser, faUsers, faUserPlus, faUserEdit, faUserMinus, faGlobe,  faChartBar,
   faFolder, faFolderOpen, faFile, faFileUpload, faFileDownload,
   faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,
   faCheck, faCheckCircle, faTimes, faTimesCircle,
@@ -43,6 +43,8 @@ const iconMap = {
   user_add: faUserPlus,
   user_edit: faUserEdit,
   user_delete: faUserMinus,
+  chart: faChartBar,
+
   
   // Fichiers et dossiers
   folder: faFolder,
