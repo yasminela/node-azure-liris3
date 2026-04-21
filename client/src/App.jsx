@@ -42,11 +42,14 @@ function App() {
   }
 
  return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
-      <Route path="/" element={user ? (user.role === 'admin' ? <TableauBordAdmin user={user} onLogout={handleLogout} /> : <TableauBordPorteur user={user} onLogout={handleLogout} />) : <Navigate to="/login" />} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Connexion onLogin={handleLogin} />} />
+        <Route path="/" element={user ? (user.role === 'admin' ? <TableauBordAdmin user={user} onLogout={handleLogout} /> : <TableauBordPorteur user={user} onLogout={handleLogout} />) : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
   );
-}
+} 
+
 export default App;
