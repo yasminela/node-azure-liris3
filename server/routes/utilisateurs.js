@@ -46,6 +46,7 @@ router.post('/', auth, isAdmin, async (req, res) => {
 });
 
 // Modifier un porteur (admin)
+// Modifier un porteur (admin)
 router.put('/:id', auth, isAdmin, async (req, res) => {
   try {
     const { firstName, lastName, email, telephone, faculte, residence, nomProjet } = req.body;
@@ -62,6 +63,7 @@ router.put('/:id', auth, isAdmin, async (req, res) => {
     
     res.json({ message: 'Porteur modifié', user });
   } catch (error) {
+    console.error('Erreur modification:', error);
     res.status(500).json({ message: error.message });
   }
 });

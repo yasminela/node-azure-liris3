@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import api from '../utils/api';
+import Icon from './Icon';
+import { iconColors } from '../styles/iconColors';
 
 function ModifierPorteur({ porteur, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -22,10 +24,9 @@ function ModifierPorteur({ porteur, onClose, onSuccess }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
     try {
       await api.put(`/utilisateurs/${porteur._id}`, formData);
-      alert(' Porteur modifié avec succès');
+      alert('✅ Porteur modifié avec succès');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
@@ -50,68 +51,82 @@ function ModifierPorteur({ porteur, onClose, onSuccess }) {
       zIndex: 1000
     },
     modalContent: {
-      background: 'white',
+      background: iconColors.white,
       borderRadius: '20px',
       padding: '30px',
       maxWidth: '500px',
       width: '90%',
-      maxHeight: '90vh',
-      overflowY: 'auto'
+      maxHeight: '80vh',
+      overflow: 'auto'
     },
     title: {
-      color: '#667eea',
+      color: iconColors.primary,
       marginBottom: '20px',
-      fontSize: '24px'
+      fontSize: '24px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
     },
     formGroup: {
       marginBottom: '15px'
     },
     label: {
       display: 'block',
-      marginBottom: '5px',
+      marginBottom: '8px',
       fontWeight: '500',
-      color: '#333'
+      color: iconColors.black
     },
     input: {
       width: '100%',
-      padding: '10px',
-      border: '1px solid #ddd',
+      padding: '12px',
+      border: `1px solid #e2e8f0`,
       borderRadius: '8px',
-      fontSize: '14px'
+      fontSize: '14px',
+      fontFamily: 'inherit'
     },
     buttonGroup: {
       display: 'flex',
-      gap: '10px',
+      gap: '12px',
       marginTop: '20px'
     },
     submitBtn: {
-      background: '#667eea',
-      color: 'white',
-      padding: '10px 20px',
+      background: iconColors.primary,
+      color: iconColors.white,
+      padding: '12px 20px',
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      flex: 1
+      flex: 1,
+      fontWeight: 'bold',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
     },
     cancelBtn: {
       background: '#e2e8f0',
-      padding: '10px 20px',
+      color: iconColors.gray,
+      padding: '12px 20px',
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      flex: 1
+      flex: 1,
+      fontWeight: 'bold',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
     },
-    error: {
+    errorMsg: {
       background: '#fee2e2',
-      color: '#dc2626',
-      padding: '10px',
+      color: iconColors.danger,
+      padding: '12px',
       borderRadius: '8px',
-      marginBottom: '15px',
-      fontSize: '14px'
+      marginBottom: '15px'
     },
     infoText: {
       background: '#e0e7ff',
-      color: '#667eea',
+      color: iconColors.primary,
       padding: '10px',
       borderRadius: '8px',
       marginBottom: '15px',
@@ -122,12 +137,16 @@ function ModifierPorteur({ porteur, onClose, onSuccess }) {
   return (
     <div style={styles.modal}>
       <div style={styles.modalContent}>
-        <h2 style={styles.title}> Modifier le porteur</h2>
+        <div style={styles.title}>
+          <Icon name="user_edit" size={24} color={iconColors.primary} />
+          Modifier le porteur
+        </div>
         
-        {error && <div style={styles.error}> {error}</div>}
+        {error && <div style={styles.errorMsg}>{error}</div>}
         
         <div style={styles.infoText}>
-           ID: {porteur?._id?.slice(-8) || 'N/A'}
+          <Icon name="info" size={14} color={iconColors.primary} />
+          {' '}ID: {porteur?._id?.slice(-8) || 'N/A'}
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -219,12 +238,15 @@ function ModifierPorteur({ porteur, onClose, onSuccess }) {
           </div>
 
           <div style={styles.buttonGroup}>
-            <button type="submit" style={styles.submitBtn}>
-  <Icon name="user_edit" size={18} color="white" />
-  Modifier
-</button>
+            <button type="submit" disabled={loading} style={styles.submitBtn}>
+              {loading ? (
+                <><Icon name="pending" size={16} color="white" /> Modification...</>
+              ) : (
+                <><Icon name="save" size={16} color="white" /> Enregistrer</>
+              )}
+            </button>
             <button type="button" onClick={onClose} style={styles.cancelBtn}>
-              Annuler
+              <Icon name="times" size={16} color={iconColors.gray} /> Annuler
             </button>
           </div>
         </form>
