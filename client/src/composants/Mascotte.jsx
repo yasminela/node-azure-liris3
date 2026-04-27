@@ -12,11 +12,18 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
       setVisible(true);
       setMessage('🤖 Analyse de votre BMC en cours...');
       
-      const timer = setTimeout(() => {
+      const timer1 = setTimeout(() => {
         setMessage('📊 Calcul du score d\'impact...');
       }, 2000);
       
-      return () => clearTimeout(timer);
+      const timer2 = setTimeout(() => {
+        setMessage('🎯 Analyse des mots-clés...');
+      }, 4000);
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     } else if (resultat) {
       if (resultat.success === false) {
         setMessage(`😕 ${resultat.erreur || 'Erreur lors de l\'analyse'}`);
@@ -24,7 +31,8 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
         setMessage(`✨ Analyse terminée ! Score: ${resultat.scoreImpact}/100`);
       }
       // Auto-fermeture après 5 secondes
-      setTimeout(() => setVisible(false), 5000);
+      const timer = setTimeout(() => setVisible(false), 5000);
+      return () => clearTimeout(timer);
     }
   }, [isAnalyzing, resultat]);
 
@@ -41,7 +49,7 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
       alignItems: 'flex-end',
       gap: '10px'
     }}>
-      {/* Bulle */}
+      {/* Bulle de dialogue */}
       <div style={{
         background: 'white',
         borderRadius: '20px',
@@ -90,19 +98,24 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
           </div>
         )}
         
-        <button onClick={() => setVisible(false)} style={{
-          position: 'absolute',
-          top: '5px',
-          right: '10px',
-          background: 'none',
-          border: 'none',
-          fontSize: '16px',
-          cursor: 'pointer',
-          color: '#999'
-        }}>×</button>
+        <button 
+          onClick={() => setVisible(false)} 
+          style={{
+            position: 'absolute',
+            top: '5px',
+            right: '10px',
+            background: 'none',
+            border: 'none',
+            fontSize: '16px',
+            cursor: 'pointer',
+            color: '#999'
+          }}
+        >
+          ×
+        </button>
       </div>
       
-      {/* Robot */}
+      {/* Mascotte robot */}
       <div style={{
         width: '60px',
         height: '60px',

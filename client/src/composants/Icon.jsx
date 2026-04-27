@@ -6,8 +6,8 @@ import {
   // Fichiers
   faFolder, faFolderOpen, faFile, faFileUpload, faFileDownload,
   // Actions
-  faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,
-  faCheck, faCheckCircle, faTimes, faTimesCircle,
+  faTrash, faTrashAlt, faEdit, faPlusCircle, faMinusCircle,faHandshake,
+  faCheck, faCheckCircle, faTimes, faTimesCircle,faCopyright,faCode,
   faExclamationCircle, faExclamationTriangle, faInfoCircle,
   faBell, faBellSlash, faEnvelope, faEnvelopeOpen,
   // Calendrier & Temps
@@ -85,7 +85,9 @@ const iconMap = {
   refresh: faSync,
   save: faSave,
   copy: faCopy,
-  
+  handshake: faHandshake,
+copyright: faCopyright,
+code: faCode,
   // Navigation
   home: faHome,
   settings: faCog,

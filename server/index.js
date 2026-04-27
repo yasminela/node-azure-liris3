@@ -4,7 +4,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import iaRoutes from './routes/ia.js';
 
 dotenv.config();
 
@@ -15,7 +14,7 @@ const app = express();
 
 //  Configuration CORS complète et définitive
 app.use(cors({
-  origin: '*',  // ⚠️ Temporairement pour tester - à restreindre ensuite
+  origin: '*',  // Temporairement pour tester - à restreindre ensuite
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -36,6 +35,7 @@ import tacheRoutes from './routes/taches.js';
 import documentRoutes from './routes/documents.js';
 import evenementRoutes from './routes/evenements.js';
 import notificationRoutes from './routes/notifications.js';
+import iaRoutes from './routes/ai.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/utilisateurs', utilisateurRoutes);
