@@ -8,9 +8,10 @@ import ModifierPorteur from '../composants/ModifierPorteur';
 import ValidationDocument from '../composants/ValidationDocument';
 import AssignerEtapes from '../composants/AssignerEtapes';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
+import GestionAnalysesIA from '../composants/GestionAnalysesIA';
+import ScoresPorteurs from '../composants/ScoresPorteurs';
 import Icon from '../composants/Icon';
 import { iconColors } from '../styles/iconColors';
-import PiedDePage from '../composants/PiedDePage';
 
 function TableauBordAdmin({ user, onLogout }) {
   const [stats, setStats] = useState({ projets: 0, porteurs: 0, soumissions: 0 });
@@ -51,13 +52,13 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   const handleDeletePorteur = async (id) => {
-    if (confirm('Supprimer ce porteur ? Cette action est irréversible.')) {
+    if (confirm('Supprimer ce porteur ?')) {
       try {
         await api.delete(`/utilisateurs/${id}`);
         await loadAllData();
-        alert('Porteur supprimé');
+        alert('✅ Porteur supprimé');
       } catch (error) {
-        alert('Erreur lors de la suppression');
+        alert('❌ Erreur lors de la suppression');
       }
     }
   };
@@ -67,9 +68,9 @@ function TableauBordAdmin({ user, onLogout }) {
       try {
         await api.delete(`/projets/${id}`);
         await loadAllData();
-        alert('Projet supprimé');
+        alert('✅ Projet supprimé');
       } catch (error) {
-        alert('Erreur lors de la suppression');
+        alert('❌ Erreur lors de la suppression');
       }
     }
   };
@@ -78,10 +79,10 @@ function TableauBordAdmin({ user, onLogout }) {
     try {
       if (statut === 'valide') {
         await api.put(`/projets/valider/${id}`, { feedback });
-        alert('Projet validé');
+        alert('✅ Projet validé');
       } else {
         await api.put(`/projets/rejeter/${id}`, { feedback });
-        alert('Projet rejeté');
+        alert('❌ Projet rejeté');
       }
       await loadAllData();
     } catch (error) {
@@ -91,22 +92,13 @@ function TableauBordAdmin({ user, onLogout }) {
 
   const getStatutBadge = (statut) => {
     const badges = {
-      en_attente: { background: '#fef3c7', color: iconColors.status.en_attente, text: '⏳ En attente', icon: 'pending' },
-      valide: { background: '#d1fae5', color: iconColors.status.validee, text: '✅ Validé', icon: 'check_st' },
-      rejete: { background: '#fee2e2', color: iconColors.status.refusee, text: '❌ Rejeté', icon: 'exclamation_point' }
+      en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: 'pending' },
+      valide: { background: '#d1fae5', color: '#059669', text: '✅ Validé', icon: 'check_st' },
+      rejete: { background: '#fee2e2', color: '#dc2626', text: '❌ Rejeté', icon: 'exclamation_point' }
     };
-    const b = badges[statut] || { background: '#f3f4f6', color: iconColors.gray, text: statut, icon: 'info' };
+    const b = badges[statut] || { background: '#f3f4f6', color: '#374151', text: statut, icon: 'info' };
     return (
-      <span style={{ 
-        background: b.background, 
-        color: b.color, 
-        padding: '4px 12px', 
-        borderRadius: '20px', 
-        fontSize: '12px', 
-        display: 'inline-flex', 
-        alignItems: 'center', 
-        gap: '6px' 
-      }}>
+      <span style={{ background: b.background, color: b.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
         <Icon name={b.icon} size={12} color={b.color} />
         {b.text}
       </span>
@@ -114,11 +106,7 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   const styles = {
-    container: { 
-      padding: '30px', 
-      maxWidth: '1400px', 
-      margin: '0 auto' 
-    },
+    container: { padding: '30px', maxWidth: '1400px', margin: '0 auto' },
     welcomeSection: {
       background: `linear-gradient(135deg, ${iconColors.primary} 0%, ${iconColors.primaryDark} 100%)`,
       borderRadius: '24px',
@@ -131,174 +119,29 @@ function TableauBordAdmin({ user, onLogout }) {
       flexWrap: 'wrap'
     },
     welcomeText: { flex: 1 },
-    welcomeTitle: {
-      fontSize: '28px',
-      fontWeight: 'bold',
-      marginBottom: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px'
-    },
-    welcomeDate: {
-      fontSize: '14px',
-      opacity: 0.8,
-      marginTop: '8px'
-    },
-      welcomeImage: { 
-    width: '480px',
-    height: 'auto',
-    maxHeight: '400px', 
-    borderRadius: '16px',
-    objectFit: 'contain'
-    },
-    statsContainer: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-      gap: '20px',
-      marginBottom: '30px'
-    },
-    statCard: {
-      background: iconColors.white,
-      padding: '24px',
-      borderRadius: '20px',
-      textAlign: 'center',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-      cursor: 'pointer',
-      transition: 'transform 0.2s'
-    },
-    statNumber: { 
-      fontSize: '36px', 
-      fontWeight: 'bold', 
-      marginBottom: '8px',
-      color: iconColors.black
-    },
-    statLabel: {
-      color: iconColors.gray,
-      fontSize: '14px'
-    },
-    buttonGroup: { 
-      display: 'flex', 
-      gap: '16px', 
-      marginBottom: '30px', 
-      flexWrap: 'wrap' 
-    },
-    actionBtn: { 
-      padding: '12px 24px', 
-      border: 'none', 
-      borderRadius: '12px', 
-      cursor: 'pointer', 
-      fontWeight: 'bold', 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '10px',
-      transition: 'transform 0.2s',
-      fontSize: '14px'
-    },
+    welcomeTitle: { fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' },
+    welcomeDate: { fontSize: '14px', opacity: 0.8, marginTop: '8px' },
+    welcomeImage: { height: '80px', borderRadius: '10px', objectFit: 'contain' },
+    statsContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' },
+    statCard: { background: iconColors.white, padding: '24px', borderRadius: '20px', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.2s' },
+    statNumber: { fontSize: '36px', fontWeight: 'bold', marginBottom: '8px', color: iconColors.black },
+    statLabel: { color: iconColors.gray, fontSize: '14px' },
+    buttonGroup: { display: 'flex', gap: '16px', marginBottom: '30px', flexWrap: 'wrap' },
+    actionBtn: { padding: '12px 24px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' },
     btnPrimary: { background: iconColors.primary, color: iconColors.white },
     btnSuccess: { background: iconColors.secondary, color: iconColors.white },
-    btnPurple: { background: iconColors.earlyStage.mois5, color: iconColors.white },
-    infoCard: {
-      background: iconColors.white,
-      borderRadius: '20px',
-      padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
-    },
-    sectionTitle: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      marginBottom: '20px',
-      color: iconColors.black,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      borderLeft: `4px solid ${iconColors.primary}`,
-      paddingLeft: '16px'
-    },
-    table: { 
-      width: '100%', 
-      borderCollapse: 'collapse', 
-      marginTop: '15px', 
-      overflowX: 'auto' 
-    },
-    th: { 
-      padding: '14px', 
-      textAlign: 'left', 
-      background: iconColors.grayBg, 
-      color: iconColors.gray, 
-      fontWeight: '600',
-      fontSize: '14px',
-      borderBottom: `2px solid #e2e8f0`
-    },
-    td: { 
-      padding: '14px', 
-      borderBottom: '1px solid #e2e8f0',
-      fontSize: '14px'
-    },
-    btnEdit: { 
-      background: iconColors.action.edit, 
-      color: iconColors.white, 
-      border: 'none', 
-      padding: '6px 12px', 
-      borderRadius: '8px', 
-      cursor: 'pointer', 
-      marginRight: '8px', 
-      display: 'inline-flex', 
-      alignItems: 'center', 
-      gap: '6px',
-      fontSize: '12px'
-    },
-    btnDelete: { 
-      background: iconColors.action.delete, 
-      color: iconColors.white, 
-      border: 'none', 
-      padding: '6px 12px', 
-      borderRadius: '8px', 
-      cursor: 'pointer', 
-      marginRight: '8px', 
-      display: 'inline-flex', 
-      alignItems: 'center', 
-      gap: '6px',
-      fontSize: '12px'
-    },
-    btnValidate: { 
-      background: iconColors.action.validate, 
-      color: iconColors.white, 
-      border: 'none', 
-      padding: '6px 12px', 
-      borderRadius: '8px', 
-      cursor: 'pointer', 
-      marginRight: '8px', 
-      display: 'inline-flex', 
-      alignItems: 'center', 
-      gap: '6px',
-      fontSize: '12px'
-    },
-    btnReject: { 
-      background: iconColors.action.reject, 
-      color: iconColors.white, 
-      border: 'none', 
-      padding: '6px 12px', 
-      borderRadius: '8px', 
-      cursor: 'pointer', 
-      display: 'inline-flex', 
-      alignItems: 'center', 
-      gap: '6px',
-      fontSize: '12px'
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '48px',
-      color: iconColors.grayLight
-    },
-    tabsContainer: {
-      display: 'flex',
-      gap: '8px',
-      marginBottom: '24px',
-      borderBottom: `1px solid #e2e8f0`,
-      paddingBottom: '12px',
-      flexWrap: 'wrap'
-    },
+    btnPurple: { background: '#8b5cf6', color: iconColors.white },
+    infoCard: { background: iconColors.white, borderRadius: '20px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' },
+    sectionTitle: { fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: iconColors.black, display: 'flex', alignItems: 'center', gap: '10px', borderLeft: `4px solid ${iconColors.primary}`, paddingLeft: '16px' },
+    table: { width: '100%', borderCollapse: 'collapse', marginTop: '15px', overflowX: 'auto' },
+    th: { padding: '14px', textAlign: 'left', background: iconColors.grayBg, color: iconColors.gray, fontWeight: '600', fontSize: '14px', borderBottom: '2px solid #e2e8f0' },
+    td: { padding: '14px', borderBottom: '1px solid #e2e8f0', fontSize: '14px' },
+    btnEdit: { background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    btnDelete: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    btnValidate: { background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    btnReject: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    emptyState: { textAlign: 'center', padding: '48px', color: iconColors.grayLight },
+    tabsContainer: { display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', flexWrap: 'wrap' },
     tab: (active) => ({
       padding: '10px 20px',
       background: active ? iconColors.primary : 'transparent',
@@ -309,8 +152,7 @@ function TableauBordAdmin({ user, onLogout }) {
       fontWeight: '500',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      transition: 'all 0.2s'
+      gap: '8px'
     })
   };
 
@@ -320,7 +162,7 @@ function TableauBordAdmin({ user, onLogout }) {
         <Navbar user={user} onLogout={onLogout} />
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <Icon name="pending" size={40} color={iconColors.primary} />
-          <p style={{ marginTop: '16px', color: iconColors.gray }}>Chargement du tableau de bord...</p>
+          <p>Chargement du tableau de bord...</p>
         </div>
       </div>
     );
@@ -330,290 +172,80 @@ function TableauBordAdmin({ user, onLogout }) {
     <div>
       <Navbar user={user} onLogout={onLogout} />
       <div style={styles.container}>
-
-        {/* Section Bienvenue */}
         <div style={styles.welcomeSection}>
           <div style={styles.welcomeText}>
-            <div style={styles.welcomeTitle}>
-              <Icon name="dashboard_panel" size={32} color={iconColors.white} />
-              Tableau de bord Administrateur
-            </div>
+            <div style={styles.welcomeTitle}><Icon name="dashboard_panel" size={32} color={iconColors.white} /> Tableau de bord Administrateur</div>
             <p>Bienvenue, {user?.firstName || 'Administrateur'} {user?.lastName || ''} !</p>
-            <p style={styles.welcomeDate}>
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
+            <p style={styles.welcomeDate}>{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
-          <img 
-            src="/img.png" 
-            alt="Incubiny" 
-            style={styles.welcomeImage} 
-            onError={(e) => e.target.style.display = 'none'} 
-          />
+          <img src="/img.png" alt="Incubiny" style={styles.welcomeImage} onError={(e) => e.target.style.display = 'none'} />
         </div>
 
-        {/* Timeline Early Stage (version admin) */}
         <EarlyStageTimeline userRole="admin" />
 
-        {/* Onglets */}
         <div style={styles.tabsContainer}>
-          <button 
-            style={styles.tab(activeTab === 'dashboard')} 
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <Icon name="dashboard_panel" size={16} color={activeTab === 'dashboard' ? iconColors.white : iconColors.gray} />
-            Tableau de bord
-          </button>
-          <button 
-            style={styles.tab(activeTab === 'porteurs')} 
-            onClick={() => setActiveTab('porteurs')}
-          >
-            <Icon name="users_alt" size={16} color={activeTab === 'porteurs' ? iconColors.white : iconColors.gray} />
-            Porteurs ({porteurs.length})
-          </button>
-          <button 
-            style={styles.tab(activeTab === 'projets')} 
-            onClick={() => setActiveTab('projets')}
-          >
-            <Icon name="business" size={16} color={activeTab === 'projets' ? iconColors.white : iconColors.gray} />
-            Projets à valider
-          </button>
-          <button 
-            style={styles.tab(activeTab === 'soumissions')} 
-            onClick={() => setActiveTab('soumissions')}
-          >
-            <Icon name="document" size={16} color={activeTab === 'soumissions' ? iconColors.white : iconColors.gray} />
-            Soumissions ({stats.soumissions})
-          </button>
+          <button style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}><Icon name="dashboard_panel" size={16} color={activeTab === 'dashboard' ? 'white' : '#64748b'} /> Tableau de bord</button>
+          <button style={styles.tab(activeTab === 'porteurs')} onClick={() => setActiveTab('porteurs')}><Icon name="users_alt" size={16} color={activeTab === 'porteurs' ? 'white' : '#64748b'} /> Porteurs ({porteurs.length})</button>
+          <button style={styles.tab(activeTab === 'projets')} onClick={() => setActiveTab('projets')}><Icon name="business" size={16} color={activeTab === 'projets' ? 'white' : '#64748b'} /> Projets à valider</button>
+          <button style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}><Icon name="document" size={16} color={activeTab === 'soumissions' ? 'white' : '#64748b'} /> Soumissions ({stats.soumissions})</button>
+          <button style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}><Icon name="chart" size={16} color={activeTab === 'analyses' ? 'white' : '#64748b'} /> Analyses IA</button>
+          <button style={styles.tab(activeTab === 'scores')} onClick={() => setActiveTab('scores')}><Icon name="chart" size={16} color={activeTab === 'scores' ? 'white' : '#64748b'} /> Scores porteurs</button>
         </div>
 
         {activeTab === 'dashboard' && (
           <>
-            {/* Statistiques */}
             <div style={styles.statsContainer}>
-              <div 
-                style={styles.statCard}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <Icon name="business" size={40} color={iconColors.primary} />
-                <div style={styles.statNumber}>{stats.projets}</div>
-                <div style={styles.statLabel}>Projets</div>
-              </div>
-              <div 
-                style={styles.statCard}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <Icon name="users_alt" size={40} color={iconColors.primary} />
-                <div style={styles.statNumber}>{stats.porteurs}</div>
-                <div style={styles.statLabel}>Porteurs</div>
-              </div>
-              <div 
-                style={styles.statCard}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <Icon name="exclamation_point" size={40} color={iconColors.warning} />
-                <div style={styles.statNumber}>{stats.soumissions}</div>
-                <div style={styles.statLabel}>Soumissions en attente</div>
-              </div>
+              <div style={styles.statCard}><Icon name="business" size={40} color={iconColors.primary} /><div style={styles.statNumber}>{stats.projets}</div><div style={styles.statLabel}>Projets</div></div>
+              <div style={styles.statCard}><Icon name="users_alt" size={40} color={iconColors.primary} /><div style={styles.statNumber}>{stats.porteurs}</div><div style={styles.statLabel}>Porteurs</div></div>
+              <div style={styles.statCard}><Icon name="exclamation_point" size={40} color={iconColors.warning} /><div style={styles.statNumber}>{stats.soumissions}</div><div style={styles.statLabel}>Soumissions en attente</div></div>
             </div>
-
-            {/* Boutons d'action */}
             <div style={styles.buttonGroup}>
-              <button 
-                onClick={() => setShowCreationPorteur(true)} 
-                style={{ ...styles.actionBtn, ...styles.btnPrimary }}
-              >
-                <Icon name="user_add" size={18} color={iconColors.white} /> Créer un porteur
-              </button>
-              <button 
-                onClick={() => setShowEnvoiTache(true)} 
-                style={{ ...styles.actionBtn, ...styles.btnSuccess }}
-              >
-                <Icon name="send" size={18} color={iconColors.white} /> Envoyer une tâche
-              </button>
-              <button 
-                onClick={() => setShowAssignerEtapes(true)} 
-                style={{ ...styles.actionBtn, ...styles.btnPurple }}
-              >
-                <Icon name="assignment" size={18} color={iconColors.white} /> Assigner programme Early-Stage
-              </button>
+              <button onClick={() => setShowCreationPorteur(true)} style={{ ...styles.actionBtn, ...styles.btnPrimary }}><Icon name="user_add" size={18} color={iconColors.white} /> Créer un porteur</button>
+              <button onClick={() => setShowEnvoiTache(true)} style={{ ...styles.actionBtn, ...styles.btnSuccess }}><Icon name="send" size={18} color={iconColors.white} /> Envoyer une tâche</button>
+              <button onClick={() => setShowAssignerEtapes(true)} style={{ ...styles.actionBtn, ...styles.btnPurple }}><Icon name="assignment" size={18} color={iconColors.white} /> Assigner programme Early-Stage</button>
             </div>
-
-            {/* Calendrier */}
             <Calendrier onEventAdded={loadAllData} />
-
-            {/* Documents à valider */}
-            <div id="soumissions">
-              <ValidationDocument onValidate={loadAllData} />
-            </div>
+            <div id="soumissions"><ValidationDocument onValidate={loadAllData} /></div>
           </>
         )}
 
         {activeTab === 'porteurs' && (
           <div style={styles.infoCard}>
-            <div style={styles.sectionTitle}>
-              <Icon name="users_alt" size={22} color={iconColors.primary} />
-              Liste des porteurs
-            </div>
-            {porteurs.length === 0 ? (
-              <div style={styles.emptyState}>
-                <Icon name="no_notification" size={48} color={iconColors.grayLight} />
-                <p>Aucun porteur créé</p>
-                <button 
-                  onClick={() => setShowCreationPorteur(true)} 
-                  style={{ ...styles.actionBtn, ...styles.btnPrimary, marginTop: '16px' }}
-                >
-                  <Icon name="user_add" size={16} color={iconColors.white} />
-                  Créer un porteur
-                </button>
-              </div>
-            ) : (
+            <div style={styles.sectionTitle}><Icon name="users_alt" size={22} color={iconColors.primary} /> Liste des porteurs</div>
+            {porteurs.length === 0 ? <div style={styles.emptyState}><Icon name="no_notification" size={48} color={iconColors.grayLight} /><p>Aucun porteur créé</p></div> :
               <div style={{ overflowX: 'auto' }}>
                 <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Nom</th>
-                      <th style={styles.th}>Email</th>
-                      <th style={styles.th}>Téléphone</th>
-                      <th style={styles.th}>Projet</th>
-                      <th style={styles.th}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {porteurs.map(p => (
-                      <tr key={p._id}>
-                        <td style={styles.td}>{p.firstName} {p.lastName}</td>
-                        <td style={styles.td}>{p.email}</td>
-                        <td style={styles.td}>{p.telephone || '—'}</td>
-                        <td style={styles.td}>{p.nomProjet || '—'}</td>
-                        <td style={styles.td}>
-                          <button 
-                            onClick={() => { setSelectedPorteur(p); setShowEditPorteur(true); }} 
-                            style={styles.btnEdit}
-                          >
-                            <Icon name="edit" size={12} color={iconColors.white} /> Modifier
-                          </button>
-                          <button 
-                            onClick={() => handleDeletePorteur(p._id)} 
-                            style={styles.btnDelete}
-                          >
-                            <Icon name="delete" size={12} color={iconColors.white} /> Supprimer
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead><tr><th style={styles.th}>Nom</th><th style={styles.th}>Email</th><th style={styles.th}>Téléphone</th><th style={styles.th}>Projet</th><th style={styles.th}>Actions</th></tr></thead>
+                  <tbody>{porteurs.map(p => <tr key={p._id}><td style={styles.td}>{p.firstName} {p.lastName}</td><td style={styles.td}>{p.email}</td><td style={styles.td}>{p.telephone || '—'}</td><td style={styles.td}>{p.nomProjet || '—'}</td><td style={styles.td}><button onClick={() => { setSelectedPorteur(p); setShowEditPorteur(true); }} style={styles.btnEdit}><Icon name="edit" size={12} color="white" /> Modifier</button><button onClick={() => handleDeletePorteur(p._id)} style={styles.btnDelete}><Icon name="delete" size={12} color="white" /> Supprimer</button></td></tr>)}</tbody>
                 </table>
               </div>
-            )}
+            }
           </div>
         )}
 
         {activeTab === 'projets' && (
           <div style={styles.infoCard}>
-            <div style={styles.sectionTitle}>
-              <Icon name="business" size={22} color={iconColors.primary} />
-              Projets à valider
-            </div>
-            {projets.filter(p => p.statut === 'en_attente').length === 0 ? (
-              <div style={styles.emptyState}>
-                <Icon name="check_st" size={48} color={iconColors.grayLight} />
-                <p>Aucun projet en attente de validation</p>
-              </div>
-            ) : (
+            <div style={styles.sectionTitle}><Icon name="business" size={22} color={iconColors.primary} /> Projets à valider</div>
+            {projets.filter(p => p.statut === 'en_attente').length === 0 ? <div style={styles.emptyState}><Icon name="check_st" size={48} color={iconColors.grayLight} /><p>Aucun projet en attente</p></div> :
               <div style={{ overflowX: 'auto' }}>
                 <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Projet</th>
-                      <th style={styles.th}>Porteur</th>
-                      <th style={styles.th}>Statut</th>
-                      <th style={styles.th}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projets.filter(p => p.statut === 'en_attente').map(p => (
-                      <tr key={p._id}>
-                        <td style={styles.td}>
-                          <strong>{p.titre || p.nomProjet}</strong>
-                          <br /><span style={{ fontSize: '12px', color: iconColors.gray }}>{p.description?.substring(0, 100)}</span>
-                        </td>
-                        <td style={styles.td}>{p.porteurId?.firstName} {p.porteurId?.lastName}</td>
-                        <td style={styles.td}>{getStatutBadge(p.statut)}</td>
-                        <td style={styles.td}>
-                          <button 
-                            onClick={() => handleValidateProjet(p._id, 'valide', '')} 
-                            style={styles.btnValidate}
-                          >
-                            <Icon name="check_st" size={12} color={iconColors.white} /> Valider
-                          </button>
-                          <button 
-                            onClick={() => {
-                              const feedback = prompt('Motif du rejet :');
-                              if (feedback) handleValidateProjet(p._id, 'rejete', feedback);
-                            }} 
-                            style={styles.btnReject}
-                          >
-                            <Icon name="delete" size={12} color={iconColors.white} /> Rejeter
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProjet(p._id)} 
-                            style={styles.btnDelete}
-                          >
-                            <Icon name="delete_file" size={12} color={iconColors.white} /> Supprimer
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead><tr><th style={styles.th}>Projet</th><th style={styles.th}>Porteur</th><th style={styles.th}>Statut</th><th style={styles.th}>Actions</th></tr></thead>
+                  <tbody>{projets.filter(p => p.statut === 'en_attente').map(p => <tr key={p._id}><td style={styles.td}><strong>{p.titre || p.nomProjet}</strong></td><td style={styles.td}>{p.porteurId?.firstName} {p.porteurId?.lastName}</td><td style={styles.td}>{getStatutBadge(p.statut)}</td><td style={styles.td}><button onClick={() => handleValidateProjet(p._id, 'valide', '')} style={styles.btnValidate}><Icon name="check_st" size={12} color="white" /> Valider</button><button onClick={() => handleValidateProjet(p._id, 'rejete', 'Projet non conforme')} style={styles.btnReject}><Icon name="delete" size={12} color="white" /> Rejeter</button></td></tr>)}</tbody>
                 </table>
               </div>
-            )}
+            }
           </div>
         )}
 
-        {activeTab === 'soumissions' && (
-          <ValidationDocument onValidate={loadAllData} />
-        )}
+        {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
+        {activeTab === 'analyses' && <GestionAnalysesIA />}
+        {activeTab === 'scores' && <ScoresPorteurs />}
       </div>
 
-      {/* Modals */}
-      {showCreationPorteur && (
-        <CreationPorteur 
-          onClose={() => setShowCreationPorteur(false)} 
-          onSuccess={() => { loadAllData(); }} 
-        />
-      )}
-      {showEnvoiTache && (
-        <EnvoiTache 
-          onClose={() => setShowEnvoiTache(false)} 
-          onSuccess={loadAllData} 
-        />
-      )}
-      {showAssignerEtapes && (
-        <AssignerEtapes 
-          onClose={() => setShowAssignerEtapes(false)} 
-          onSuccess={loadAllData} 
-        />
-      )}
-      {showEditPorteur && selectedPorteur && (
-        <ModifierPorteur 
-          porteur={selectedPorteur} 
-          onClose={() => { 
-            setShowEditPorteur(false); 
-            setSelectedPorteur(null); 
-          }} 
-          onSuccess={() => { loadAllData(); }} 
-        />
-      )}
-      <PiedDePage />
+      {showCreationPorteur && <CreationPorteur onClose={() => setShowCreationPorteur(false)} onSuccess={() => { loadAllData(); }} />}
+      {showEnvoiTache && <EnvoiTache onClose={() => setShowEnvoiTache(false)} onSuccess={loadAllData} />}
+      {showAssignerEtapes && <AssignerEtapes onClose={() => setShowAssignerEtapes(false)} onSuccess={loadAllData} />}
+      {showEditPorteur && selectedPorteur && <ModifierPorteur porteur={selectedPorteur} onClose={() => { setShowEditPorteur(false); setSelectedPorteur(null); }} onSuccess={() => { loadAllData(); }} />}
     </div>
   );
 }

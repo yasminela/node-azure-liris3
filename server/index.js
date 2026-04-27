@@ -5,17 +5,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Import des routes (sans default)
-import authRoutes from './routes/authentification.js';
-import utilisateurRoutes from './routes/utilisateurs.js';
-import projetRoutes from './routes/projets.js';
-import etapeRoutes from './routes/etapes.js';
-import tacheRoutes from './routes/taches.js';
-import documentRoutes from './routes/documents.js';
-import evenementRoutes from './routes/evenements.js';
-import notificationRoutes from './routes/notifications.js';
-import iaRoutes from './routes/ai.js';
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -36,6 +25,18 @@ app.use(express.json());
 app.use('/telechargements', express.static(path.join(__dirname, 'telechargements')));
 
 // Routes
+import authRoutes from './routes/authentification.js';
+import utilisateurRoutes from './routes/utilisateurs.js';
+import projetRoutes from './routes/projets.js';
+import etapeRoutes from './routes/etapes.js';
+import tacheRoutes from './routes/taches.js';
+import documentRoutes from './routes/documents.js';
+import evenementRoutes from './routes/evenements.js';
+import notificationRoutes from './routes/notifications.js';
+import iaRoutes from './routes/ai.js';
+import soumissionRoutes from './routes/soumissions.js';
+import profilRoutes from './routes/profil.js';
+
 app.use('/api/auth', authRoutes);
 app.use('/api/utilisateurs', utilisateurRoutes);
 app.use('/api/projets', projetRoutes);
@@ -45,19 +46,18 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/evenements', evenementRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', iaRoutes);
+app.use('/api/soumissions', soumissionRoutes);
+app.use('/api/profil', profilRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Serveur fonctionnel' });
 });
 
-// MongoDB connexion
-mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-})
-.then(() => console.log('✅ MongoDB connecté'))
-.catch(err => console.error('❌ Erreur MongoDB:', err));
+// MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB connecté'))
+  .catch(err => console.error('❌ Erreur MongoDB:', err));
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
