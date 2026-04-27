@@ -8,6 +8,9 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    console.log('🦊 Mascotte - isAnalyzing:', isAnalyzing);
+    console.log('🦊 Mascotte - resultat:', resultat);
+    
     if (isAnalyzing) {
       setVisible(true);
       setMessage('🤖 Analyse de votre BMC en cours...');
@@ -30,13 +33,15 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
       } else {
         setMessage(`✨ Analyse terminée ! Score: ${resultat.scoreImpact}/100`);
       }
-      // Auto-fermeture après 5 secondes
       const timer = setTimeout(() => setVisible(false), 5000);
       return () => clearTimeout(timer);
     }
   }, [isAnalyzing, resultat]);
 
-  if (!visible || (!isAnalyzing && !resultat)) return null;
+  if (!visible || (!isAnalyzing && !resultat)) {
+    console.log('🦊 Mascotte - masquée');
+    return null;
+  }
 
   return (
     <div style={{
@@ -49,7 +54,6 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
       alignItems: 'flex-end',
       gap: '10px'
     }}>
-      {/* Bulle de dialogue */}
       <div style={{
         background: 'white',
         borderRadius: '20px',
@@ -115,7 +119,6 @@ function Mascotte({ isAnalyzing, resultat, onClose }) {
         </button>
       </div>
       
-      {/* Mascotte robot */}
       <div style={{
         width: '60px',
         height: '60px',

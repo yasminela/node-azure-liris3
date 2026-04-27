@@ -30,12 +30,9 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       return;
     }
 
-    console.log('📤 Début analyse...'); // ← DEBUG
-  setLoading(true);
-  setIsAnalyzing(true);
-
+    console.log('🚀 Début analyse...');
     setLoading(true);
-    setIsAnalyzing(true);
+    setIsAnalyzing(true);  // ✅ Active la mascotte
     setMascotteResult(null);
     
     const formData = new FormData();
@@ -45,10 +42,12 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       const response = await api.post('/ai/analyser-bmc', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      console.log('✅ Analyse terminée:', response.data);
       setResultat(response.data);
       setMascotteResult(response.data);
       if (onAnalyseComplete) onAnalyseComplete(response.data);
     } catch (err) {
+      console.error('❌ Erreur analyse:', err);
       const errorData = err.response?.data || { erreur: 'Erreur lors de l\'analyse' };
       setError(errorData.erreur);
       setMascotteResult({ success: false, erreur: errorData.erreur });
@@ -69,9 +68,6 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
     if (score < 65) return 'Impact moyen';
     return 'Impact fort';
   };
-
-  setIsAnalyzing(true);
-console.log('🎯 isAnalyzing =', true); // ← DEBUG
 
   const styles = {
     container: {
@@ -116,8 +112,7 @@ console.log('🎯 isAnalyzing =', true); // ← DEBUG
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      fontWeight: 'bold',
-      transition: 'transform 0.2s'
+      fontWeight: 'bold'
     },
     scoreContainer: {
       textAlign: 'center',
@@ -209,13 +204,7 @@ console.log('🎯 isAnalyzing =', true); // ← DEBUG
           />
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading} 
-          style={styles.submitBtn}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        >
+        <button type="submit" disabled={loading} style={styles.submitBtn}>
           {loading ? (
             <><FontAwesomeIcon icon={faSpinner} spin /> Analyse en cours...</>
           ) : (
@@ -273,7 +262,7 @@ console.log('🎯 isAnalyzing =', true); // ← DEBUG
         </div>
       )}
 
-      {/* Mascotte */}
+      {/* Mascotte - toujours affichée pendant l'analyse */}
       <Mascotte 
         isAnalyzing={isAnalyzing}
         resultat={mascotteResult}
