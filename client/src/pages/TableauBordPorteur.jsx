@@ -6,9 +6,9 @@ import SuiviEtapes from '../composants/SuiviEtapes';
 import CreerProjet from '../composants/CreerProjet';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import PiedDePage from '../composants/PiedDePage';
+import AnalyseBMC from '../composants/AnalyseBMC';
 import Icon from '../composants/Icon';
 import { iconColors } from '../styles/iconColors';
-import AnalyseBMC from '../composants/AnalyseBMC';
 
 function TableauBordPorteur({ user, onLogout }) {
   const [projets, setProjets] = useState([]);
@@ -312,6 +312,13 @@ function TableauBordPorteur({ user, onLogout }) {
           }} 
         />
 
+        {/* Analyse d'impact par IA */}
+        <AnalyseBMC 
+          onAnalyseComplete={(resultat) => {
+            console.log('Analyse terminée:', resultat);
+          }}
+        />
+
         {/* Statistiques */}
         <div style={styles.statsContainer}>
           <div 
@@ -407,12 +414,7 @@ function TableauBordPorteur({ user, onLogout }) {
             </div>
           )}
         </div>
-        
-<AnalyseBMC 
-  onAnalyseComplete={(resultat) => {
-    console.log('Analyse terminée:', resultat);
-  }}
-/>
+
         {/* Suivi des étapes */}
         <div id="suiviEtapes">
           <SuiviEtapes />
@@ -482,7 +484,7 @@ function TableauBordPorteur({ user, onLogout }) {
                       <td style={styles.td}>
                         {t.dateLimite ? new Date(t.dateLimite).toLocaleDateString() : '—'}
                       </td>
-                    </tr>
+                    </table>
                   ))}
                 </tbody>
               </table>

@@ -104,6 +104,18 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       fontWeight: 'bold',
       transition: 'transform 0.2s'
     },
+    buttonDisabled: {
+      opacity: 0.7,
+      cursor: 'not-allowed'
+    },
+    loadingState: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      padding: '20px',
+      color: iconColors.gray
+    },
     scoreContainer: {
       textAlign: 'center',
       padding: '20px',
@@ -164,17 +176,15 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       alignItems: 'center',
       gap: '8px'
     },
-    loadingState: {
+    alertBox: {
+      background: '#fef3c7',
+      color: '#92400e',
+      padding: '12px',
+      borderRadius: '12px',
+      marginBottom: '16px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: '10px',
-      padding: '20px',
-      color: iconColors.gray
-    },
-    buttonDisabled: {
-      opacity: 0.7,
-      cursor: 'not-allowed'
+      gap: '8px'
     }
   };
 
