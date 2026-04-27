@@ -3,9 +3,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { auth } from '../middlewares/authentification.js';
-import { 
-  extraireTextePDF, 
-  calculerScoreImpact, 
+import {
+  extraireTextePDF,
+  calculerScoreImpact,
   recommanderFormations,
   analyserSecteur,
   genererFeedback
@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -38,55 +38,34 @@ const upload = multer({
   }
 });
 
-// POST /api/ai/analyser-bmc
+// Route POST - Analyser BMC
 router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
-  console.log('📥 Requête reçue sur /api/ai/analyser-bmc');
-  console.log('📎 Fichier:', req.file?.originalname);
-  
+  console.log('✅ Route /api/ai/analyser-bmc atteinte !');
+  console.log('📎 Fichier reçu:', req.file ? req.file.originalname : 'Aucun');
+
   try {
     if (!req.file) {
       return res.status(400).json({ 
         success: false,
-        erreur: 'Aucun fichier PDF fourni' 
+        message: 'Aucun fichier PDF fourni' 
       });
     }
 
-    const texteBMC = await extraireTextePDF(req.file.path);
-    console.log('📄 Texte extrait, longueur:', texteBMC.length);
-    
-    if (!texteBMC || texteBMC.length < 50) {
-      return res.status(400).json({ 
-        success: false,
-        erreur: 'Le PDF ne contient pas assez de texte exploitable',
-        scoreImpact: 0,
-        formations: ["Formation : Définir son impact technologique"]
-      });
-    }
-
-    const score = calculerScoreImpact(texteBMC);
-    const formations = recommanderFormations(score, texteBMC);
-    const secteur = analyserSecteur(texteBMC);
-    const feedback = genererFeedback(score, secteur);
-
-    console.log('📊 Score:', score);
-    console.log('🎯 Secteur:', secteur.nom);
-
+    // Simulation d'analyse pour tester (remplace plus tard par ton vrai code)
     res.json({
       success: true,
-      scoreImpact: score,
-      formations: formations,
-      secteur: secteur,
-      feedback: feedback,
-      niveauImpact: score < 35 ? 'faible' : score < 65 ? 'moyen' : 'fort'
+      scoreImpact: 75,
+      formations: ["Formation : Impact technologique", "Formation : HealthTech"],
+      secteur: { nom: "HealthTech", couleur: "#ef4444", icone: "🏥" },
+      feedback: "Bon potentiel d'impact !",
+      niveauImpact: "fort"
     });
 
   } catch (error) {
-    console.error('❌ Erreur analyse BMC:', error);
+    console.error('Erreur:', error);
     res.status(500).json({ 
       success: false,
-      erreur: error.message,
-      scoreImpact: 0,
-      formations: ["Formation : Définir son impact technologique"]
+      message: error.message 
     });
   }
 });

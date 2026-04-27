@@ -67,15 +67,15 @@ function TableauBordPorteur({ user, onLogout }) {
 
   const getStatutBadge = (statut) => {
     const badges = {
-      en_attente: { icon: 'pending', color: iconColors.status.en_attente, text: 'En attente' },
-      valide: { icon: 'check_st', color: iconColors.status.validee, text: 'Validé' },
-      rejete: { icon: 'exclamation_point', color: iconColors.status.refusee, text: 'Rejeté' }
+      en_attente: { icon: 'pending', color: '#f59e0b', text: 'En attente' },
+      valide: { icon: 'check_st', color: '#10b981', text: 'Validé' },
+      rejete: { icon: 'exclamation_point', color: '#ef4444', text: 'Rejeté' }
     };
-    const b = badges[statut] || { icon: 'info', color: iconColors.gray, text: statut };
+    const b = badges[statut] || { icon: 'info', color: '#666', text: statut };
     return (
       <span style={{ 
         background: b.color, 
-        color: iconColors.white, 
+        color: 'white', 
         padding: '4px 10px', 
         borderRadius: '20px', 
         fontSize: '12px', 
@@ -83,22 +83,18 @@ function TableauBordPorteur({ user, onLogout }) {
         alignItems: 'center', 
         gap: '4px' 
       }}>
-        <Icon name={b.icon} size={12} color={iconColors.white} /> {b.text}
+        <Icon name={b.icon} size={12} color="white" /> {b.text}
       </span>
     );
   };
 
   const styles = {
-    container: { 
-      padding: '30px', 
-      maxWidth: '1400px', 
-      margin: '0 auto' 
-    },
+    container: { padding: '30px', maxWidth: '1400px', margin: '0 auto' },
     welcomeSection: {
-      background: `linear-gradient(135deg, ${iconColors.primary} 0%, ${iconColors.primaryDark} 100%)`,
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       borderRadius: '24px',
       padding: '32px',
-      color: iconColors.white,
+      color: 'white',
       marginBottom: '30px',
       display: 'flex',
       alignItems: 'center',
@@ -114,21 +110,9 @@ function TableauBordPorteur({ user, onLogout }) {
       alignItems: 'center',
       gap: '12px'
     },
-    welcomeSubtitle: {
-      opacity: 0.9,
-      marginBottom: '8px'
-    },
-    welcomeDate: {
-      fontSize: '14px',
-      opacity: 0.8
-    },
-    welcomeImage: { 
-      width: 'clamp(100px, 20%, 250px)',
-      height: 'auto',
-      maxHeight: '150px', 
-      borderRadius: '16px',
-      objectFit: 'contain'
-    },
+    welcomeSubtitle: { opacity: 0.9, marginBottom: '8px' },
+    welcomeDate: { fontSize: '14px', opacity: 0.8 },
+    welcomeImage: { width: '200px', height: 'auto', borderRadius: '16px', objectFit: 'contain' },
     statsContainer: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -136,26 +120,17 @@ function TableauBordPorteur({ user, onLogout }) {
       marginBottom: '30px'
     },
     statCard: {
-      background: iconColors.white,
+      background: 'white',
       padding: '24px',
       borderRadius: '20px',
       textAlign: 'center',
       boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-      cursor: 'pointer',
-      transition: 'transform 0.2s, box-shadow 0.2s'
+      cursor: 'pointer'
     },
-    statNumber: { 
-      fontSize: '36px', 
-      fontWeight: 'bold', 
-      marginBottom: '8px',
-      color: iconColors.black
-    },
-    statLabel: {
-      color: iconColors.gray,
-      fontSize: '14px'
-    },
+    statNumber: { fontSize: '36px', fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' },
+    statLabel: { color: '#64748b', fontSize: '14px' },
     infoCard: {
-      background: iconColors.white,
+      background: 'white',
       borderRadius: '20px',
       padding: '24px',
       marginBottom: '24px',
@@ -165,16 +140,16 @@ function TableauBordPorteur({ user, onLogout }) {
       fontSize: '20px',
       fontWeight: 'bold',
       marginBottom: '20px',
-      color: iconColors.black,
+      color: '#1e293b',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      borderLeft: `4px solid ${iconColors.primary}`,
+      borderLeft: '4px solid #667eea',
       paddingLeft: '16px'
     },
     btnPrimary: {
-      background: `linear-gradient(135deg, ${iconColors.primary} 0%, ${iconColors.primaryDark} 100%)`,
-      color: iconColors.white,
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
       border: 'none',
       padding: '14px 28px',
       borderRadius: '12px',
@@ -183,80 +158,12 @@ function TableauBordPorteur({ user, onLogout }) {
       marginBottom: '24px',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '10px',
-      transition: 'transform 0.2s',
-      fontSize: '14px'
+      gap: '10px'
     },
-    table: { 
-      width: '100%', 
-      borderCollapse: 'collapse', 
-      marginTop: '15px', 
-      overflowX: 'auto' 
-    },
-    th: { 
-      padding: '14px', 
-      textAlign: 'left', 
-      background: iconColors.grayBg, 
-      color: iconColors.gray, 
-      fontWeight: '600',
-      fontSize: '14px',
-      borderBottom: `2px solid #e2e8f0`
-    },
-    td: { 
-      padding: '14px', 
-      borderBottom: '1px solid #e2e8f0',
-      fontSize: '14px'
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '48px',
-      color: iconColors.grayLight
-    },
-    modalOverlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    },
-    modalContent: {
-      background: iconColors.white,
-      borderRadius: '20px',
-      padding: '24px',
-      maxWidth: '500px',
-      width: '90%',
-      maxHeight: '80vh',
-      overflow: 'auto'
-    },
-    modalTitle: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      marginBottom: '16px',
-      color: iconColors.primary
-    },
-    modalCloseBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '24px',
-      cursor: 'pointer',
-      float: 'right'
-    },
-    modalBtn: {
-      background: iconColors.primary,
-      color: iconColors.white,
-      border: 'none',
-      padding: '10px 20px',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      marginTop: '20px',
-      width: '100%',
-      fontWeight: 'bold'
-    }
+    table: { width: '100%', borderCollapse: 'collapse', marginTop: '15px', overflowX: 'auto' },
+    th: { padding: '14px', textAlign: 'left', background: '#f8fafc', color: '#475569', fontWeight: '600', fontSize: '14px', borderBottom: '2px solid #e2e8f0' },
+    td: { padding: '14px', borderBottom: '1px solid #e2e8f0', fontSize: '14px' },
+    emptyState: { textAlign: 'center', padding: '48px', color: '#94a3b8' }
   };
 
   if (loading) {
@@ -264,8 +171,8 @@ function TableauBordPorteur({ user, onLogout }) {
       <div>
         <Navbar user={user} onLogout={onLogout} />
         <div style={{ textAlign: 'center', padding: '50px' }}>
-          <Icon name="pending" size={40} color={iconColors.primary} />
-          <p style={{ marginTop: '16px', color: iconColors.gray }}>Chargement de votre espace...</p>
+          <Icon name="pending" size={40} color="#667eea" />
+          <p>Chargement de votre espace...</p>
         </div>
       </div>
     );
@@ -280,88 +187,49 @@ function TableauBordPorteur({ user, onLogout }) {
         <div style={styles.welcomeSection}>
           <div style={styles.welcomeText}>
             <div style={styles.welcomeTitle}>
-              <Icon name="user" size={32} color={iconColors.white} />
+              <Icon name="user" size={32} color="white" />
               Bienvenue, {user?.firstName || 'Porteur'} {user?.lastName || ''} !
             </div>
-            <p style={styles.welcomeSubtitle}>
-              Suivez votre progression et déposez vos documents
-            </p>
+            <p style={styles.welcomeSubtitle}>Suivez votre progression et déposez vos documents</p>
             <p style={styles.welcomeDate}>
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <img 
-            src="/img.png" 
-            alt="Incubiny" 
-            style={styles.welcomeImage} 
-            onError={(e) => e.target.style.display = 'none'} 
-          />
+          <img src="/img.png" alt="Incubiny" style={styles.welcomeImage} onError={(e) => e.target.style.display = 'none'} />
         </div>
 
         {/* Timeline Early Stage */}
         <EarlyStageTimeline 
           userRole="porteur" 
           etapesValidees={etapesValidees}
-          onEtapeClick={(mois) => {
-            setShowTimelineDetail(mois);
-          }} 
+          onEtapeClick={(mois) => setShowTimelineDetail(mois)} 
         />
 
         {/* Analyse d'impact par IA */}
-        <AnalyseBMC 
-          onAnalyseComplete={(resultat) => {
-            console.log('Analyse terminée:', resultat);
-          }}
-        />
+        <AnalyseBMC onAnalyseComplete={(resultat) => console.log('Analyse terminée:', resultat)} />
 
         {/* Statistiques */}
         <div style={styles.statsContainer}>
-          <div 
-            style={styles.statCard} 
-            onClick={() => document.getElementById('mesProjets')?.scrollIntoView({ behavior: 'smooth' })}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <Icon name="folder_open" size={40} color={iconColors.primary} />
+          <div style={styles.statCard}>
+            <Icon name="folder_open" size={40} color="#667eea" />
             <div style={styles.statNumber}>{stats.projetsCount}</div>
             <div style={styles.statLabel}>Mes projets</div>
           </div>
-          <div 
-            style={styles.statCard} 
-            onClick={() => document.getElementById('mesTaches')?.scrollIntoView({ behavior: 'smooth' })}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <Icon name="task_checklist" size={40} color={iconColors.warning} />
+          <div style={styles.statCard}>
+            <Icon name="task_checklist" size={40} color="#f59e0b" />
             <div style={styles.statNumber}>{stats.tachesCount}</div>
             <div style={styles.statLabel}>Tâches à faire</div>
           </div>
-          <div 
-            style={styles.statCard} 
-            onClick={() => document.getElementById('suiviEtapes')?.scrollIntoView({ behavior: 'smooth' })}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <Icon name="development" size={40} color={iconColors.secondary} />
+          <div style={styles.statCard}>
+            <Icon name="development" size={40} color="#10b981" />
             <div style={styles.statNumber}>{stats.etapesCount}</div>
             <div style={styles.statLabel}>Étapes restantes</div>
           </div>
         </div>
 
         {/* Bouton Nouveau Projet */}
-        <button 
-          onClick={() => setShowCreerProjet(true)} 
-          style={styles.btnPrimary}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <Icon name="add_circle" size={20} color={iconColors.white} /> 
-          Créer un nouveau projet
+        <button onClick={() => setShowCreerProjet(true)} style={styles.btnPrimary}>
+          <Icon name="add_circle" size={20} color="white" /> Créer un nouveau projet
         </button>
 
         {/* Calendrier */}
@@ -370,16 +238,15 @@ function TableauBordPorteur({ user, onLogout }) {
         {/* Mes Projets */}
         <div id="mesProjets" style={styles.infoCard}>
           <div style={styles.sectionTitle}>
-            <Icon name="folder_open" size={22} color={iconColors.primary} />
+            <Icon name="folder_open" size={22} color="#667eea" />
             Mes projets
           </div>
           {projets.length === 0 ? (
             <div style={styles.emptyState}>
-              <Icon name="no_notification" size={48} color={iconColors.grayLight} />
-              <p style={{ marginTop: '12px' }}>Vous n'avez pas encore de projet</p>
-              <button onClick={() => setShowCreerProjet(true)} style={{ ...styles.btnPrimary, marginTop: '16px', padding: '10px 20px', fontSize: '13px' }}>
-                <Icon name="add_circle" size={16} color={iconColors.white} />
-                Créer mon premier projet
+              <Icon name="no_notification" size={48} color="#cbd5e1" />
+              <p>Vous n'avez pas encore de projet</p>
+              <button onClick={() => setShowCreerProjet(true)} style={{ ...styles.btnPrimary, marginTop: '16px', padding: '10px 20px' }}>
+                <Icon name="add_circle" size={16} color="white" /> Créer mon premier projet
               </button>
             </div>
           ) : (
@@ -396,17 +263,10 @@ function TableauBordPorteur({ user, onLogout }) {
                 <tbody>
                   {projets.map(p => (
                     <tr key={p._id}>
-                      <td style={styles.td}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Icon name="business" size={16} color={iconColors.primary} />
-                          <strong>{p.titre || p.nomProjet}</strong>
-                        </div>
-                      </td>
+                      <td style={styles.td}><strong>{p.titre || p.nomProjet}</strong></td>
                       <td style={styles.td}>{p.description || '—'}</td>
                       <td style={styles.td}>{getStatutBadge(p.statut)}</td>
-                      <td style={styles.td}>
-                        {new Date(p.dateDebut).toLocaleDateString()}
-                      </td>
+                      <td style={styles.td}>{new Date(p.dateDebut).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -423,13 +283,13 @@ function TableauBordPorteur({ user, onLogout }) {
         {/* Tâches externes */}
         <div id="mesTaches" style={styles.infoCard}>
           <div style={styles.sectionTitle}>
-            <Icon name="task_checklist" size={22} color={iconColors.primary} />
+            <Icon name="task_checklist" size={22} color="#667eea" />
             Tâches externes
           </div>
           {taches.length === 0 ? (
             <div style={styles.emptyState}>
-              <Icon name="check_st" size={48} color={iconColors.grayLight} />
-              <p style={{ marginTop: '12px' }}>Aucune tâche pour le moment</p>
+              <Icon name="check_st" size={48} color="#cbd5e1" />
+              <p>Aucune tâche pour le moment</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -445,46 +305,21 @@ function TableauBordPorteur({ user, onLogout }) {
                 <tbody>
                   {taches.map(t => (
                     <tr key={t._id}>
-                      <td style={styles.td}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Icon name="assignment" size={16} color={iconColors.primary} />
-                          <strong>{t.titre}</strong>
-                        </div>
-                      </td>
+                      <td style={styles.td}><strong>{t.titre}</strong></td>
                       <td style={styles.td}>{t.description || '—'}</td>
                       <td style={styles.td}>
                         {t.estComplete ? (
-                          <span style={{ 
-                            background: '#d1fae5', 
-                            color: iconColors.status.validee, 
-                            padding: '4px 10px', 
-                            borderRadius: '20px', 
-                            fontSize: '12px', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: '4px' 
-                          }}>
-                            <Icon name="check_st" size={12} color={iconColors.status.validee} /> Complétée
+                          <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px', fontSize: '12px' }}>
+                            ✅ Complétée
                           </span>
                         ) : (
-                          <span style={{ 
-                            background: '#fef3c7', 
-                            color: iconColors.status.en_attente, 
-                            padding: '4px 10px', 
-                            borderRadius: '20px', 
-                            fontSize: '12px', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: '4px' 
-                          }}>
-                            <Icon name="pending" size={12} color={iconColors.status.en_attente} /> En cours
+                          <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '20px', fontSize: '12px' }}>
+                            ⏳ En cours
                           </span>
                         )}
                       </td>
-                      <td style={styles.td}>
-                        {t.dateLimite ? new Date(t.dateLimite).toLocaleDateString() : '—'}
-                      </td>
-                    </table>
+                      <td style={styles.td}>{t.dateLimite ? new Date(t.dateLimite).toLocaleDateString() : '—'}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -499,28 +334,43 @@ function TableauBordPorteur({ user, onLogout }) {
 
       {/* Modal Créer Projet */}
       {showCreerProjet && (
-        <CreerProjet
-          onClose={() => setShowCreerProjet(false)}
-          onSuccess={loadData}
-        />
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }} onClick={() => setShowCreerProjet(false)}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '24px', maxWidth: '500px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
+            <CreerProjet onClose={() => setShowCreerProjet(false)} onSuccess={loadData} />
+          </div>
+        </div>
       )}
 
       {/* Modal Détail Étape */}
       {showTimelineDetail && (
-        <div style={styles.modalOverlay} onClick={() => setShowTimelineDetail(null)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button style={styles.modalCloseBtn} onClick={() => setShowTimelineDetail(null)}>×</button>
-            <div style={styles.modalTitle}>
-              <Icon name="info" size={22} color={iconColors.primary} />
-              Détail - Mois {showTimelineDetail}
-            </div>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }} onClick={() => setShowTimelineDetail(null)}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '24px', maxWidth: '500px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
+            <button style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', float: 'right' }} onClick={() => setShowTimelineDetail(null)}>×</button>
+            <h3 style={{ color: '#667eea' }}>Détail - Mois {showTimelineDetail}</h3>
             <p>Cette étape sera débloquée lorsque les prérequis seront validés.</p>
-            <p style={{ marginTop: '12px', color: iconColors.gray, fontSize: '14px' }}>
-              Pour accéder à cette étape, vous devez d'abord valider les étapes précédentes.
-            </p>
-            <button style={styles.modalBtn} onClick={() => setShowTimelineDetail(null)}>
-              Fermer
-            </button>
+            <button style={{ background: '#667eea', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', marginTop: '20px', width: '100%' }} onClick={() => setShowTimelineDetail(null)}>Fermer</button>
           </div>
         </div>
       )}
