@@ -1,51 +1,103 @@
-import axios from 'axios';
-import 'dotenv/config';
+import fs from 'fs';
+import pdfParse from 'pdf-parse';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = process.env.OPENROUTER_MODEL || 'qwen/qwen3.6-plus-preview:free';
+// Extraction du texte PDF
+export const extraireTextePDF = async (cheminFichier) => {
+  const dataBuffer = fs.readFileSync(cheminFichier);
+  const data = await pdfParse(dataBuffer);
+  return data.text;
+};
 
-export async function analyzeProject(projectData) {
-  try {
-    const response = await axios.post(
-      OPENROUTER_URL,
-      {
-        model: MODEL,
-        messages: [
-          {
-            role: "system",
-            content: `Tu es un expert en incubation de startups. Analyse le projet et retourne UNIQUEMENT un JSON valide avec cette structure :
-            {
-              "viabilityScore": (0-100),
-              "marketScore": (0-100),
-              "teamScore": (0-100),
-              "feasibilityScore": (0-100),
-              "risks": ["risque1", "risque2", "risque3"],
-              "recommendations": ["recommandation1", "recommandation2"],
-              "summary": "résumé en 1 phrase"
-            }`
-          },
-          {
-            role: "user",
-            content: `Analyse ce projet d'incubation : ${JSON.stringify(projectData)}`
-          }
-        ],
-        temperature: 0.3
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://incubiny-s2t.com',
-          'X-Title': 'Incubiny S2T Platform'
-        }
-      }
-    );
-    
-    const content = response.data.choices[0].message.content;
-    return JSON.parse(content);
-  } catch (error) {
-    console.error(' Erreur AI:', error.response?.data || error.message);
-    throw new Error('Échec de l’analyse IA');
+// Calcul du score d'impact (0-100)
+export const calculerScoreImpact = (texte) => {
+  let score = 0;
+
+  const motsImpact = [
+    "réduction", "économie", "gain", "amélioration", "optimisation",
+    "agriculteur", "patient", "étudiant", "entreprise", "consommateur",
+    "IoT", "IA", "capteur", "brevet", "innovation", "prototype",
+    "impact", "social", "environnemental", "durable", "green",
+    "énergie", "solaire", "health", "educat", "agri"
+  ];
+
+  for (let mot of motsImpact) {
+    if (texte.toLowerCase().includes(mot)) score += 8;
   }
-}
+
+  if (/\d+%/.test(texte)) score += 15;
+  if (/\d{3,}/.test(texte)) score += 10;
+  if (/brevet|prototype|MVP|testé|validé/.test(texte.toLowerCase())) score += 15;
+  if (/client|cible|marché|besoin/.test(texte.toLowerCase())) score += 10;
+
+  return Math.min(score, 100);
+};
+
+// Recommandation de formations
+export const recommanderFormations = (score, texte) => {
+  let formations = [];
+
+  if (score < 35) {
+    formations.push("Formation : Définir son impact technologique");
+    formations.push("Formation : Mesurer son impact quantitatif");
+    formations.push("Formation : Structurer sa proposition de valeur");
+  } else if (score < 65) {
+    formations.push("Formation : Mesurer son impact quantitatif");
+    formations.push("Formation : Structurer sa proposition de valeur");
+    formations.push("Formation : Stratégie de déploiement");
+  } else {
+    formations.push("Formation : Passer à l'échelle avec l'impact");
+    formations.push("Formation : Stratégie de déploiement");
+    formations.push("Formation : Pitch & levée de fonds");
+  }
+
+  const texteLower = texte.toLowerCase();
+  
+  if (texteLower.includes("agriculteur") || texteLower.includes("ferme") || texteLower.includes("agri")) {
+    formations.push("Formation : Agritech & innovation rurale");
+  }
+  if (texteLower.includes("santé") || texteLower.includes("patient") || texteLower.includes("medical")) {
+    formations.push("Formation : HealthTech & impact patient");
+  }
+  if (texteLower.includes("éducation") || texteLower.includes("école") || texteLower.includes("formation")) {
+    formations.push("Formation : EdTech & impact social");
+  }
+  if (texteLower.includes("énergie") || texteLower.includes("solaire") || texteLower.includes("environnement")) {
+    formations.push("Formation : GreenTech & impact environnemental");
+  }
+
+  return [...new Set(formations)].slice(0, 5);
+};
+
+// Analyse du secteur
+export const analyserSecteur = (texte) => {
+  const texteLower = texte.toLowerCase();
+  
+  if (/(agriculteur|ferme|agri|culture|paysan|elevage)/.test(texteLower)) {
+    return { nom: "Agritech", couleur: "#10b981", icone: "🌾" };
+  }
+  if (/(santé|patient|medical|clinique|hopital|médical)/.test(texteLower)) {
+    return { nom: "HealthTech", couleur: "#ef4444", icone: "🏥" };
+  }
+  if (/(éducation|école|formation|apprentissage|étudiant)/.test(texteLower)) {
+    return { nom: "EdTech", couleur: "#3b82f6", icone: "🎓" };
+  }
+  if (/(énergie|solaire|environnement|recyclage|green)/.test(texteLower)) {
+    return { nom: "GreenTech", couleur: "#22c55e", icone: "🌱" };
+  }
+  if (/(iot|ia|intelligence artificielle|capteur|robot)/.test(texteLower)) {
+    return { nom: "DeepTech", couleur: "#8b5cf6", icone: "🤖" };
+  }
+  
+  return { nom: "Innovation générale", couleur: "#667eea", icone: "💡" };
+};
+
+// Feedback personnalisé
+export const genererFeedback = (score, secteur) => {
+  if (score < 35) {
+    return "Impact potentiel à renforcer. Les formations recommandées vous aideront à mieux définir et mesurer votre impact.";
+  } else if (score < 65) {
+    return "Bon potentiel d'impact ! Continuez à structurer votre proposition de valeur et préparez-vous à passer à l'échelle.";
+  } else {
+    return "Excellent impact détecté ! Votre projet a un fort potentiel. Concentrez-vous sur le passage à l'échelle et la recherche de financement.";
+  }
+};

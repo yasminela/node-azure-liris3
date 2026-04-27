@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import iaRoutes from './routes/ia.js';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use('/api/taches', tacheRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/evenements', evenementRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ia', iaRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

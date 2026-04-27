@@ -8,6 +8,7 @@ import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import PiedDePage from '../composants/PiedDePage';
 import Icon from '../composants/Icon';
 import { iconColors } from '../styles/iconColors';
+import AnalyseBMC from '../composants/AnalyseBMC';
 
 function TableauBordPorteur({ user, onLogout }) {
   const [projets, setProjets] = useState([]);
@@ -406,7 +407,11 @@ function TableauBordPorteur({ user, onLogout }) {
             </div>
           )}
         </div>
-
+<AnalyseBMC 
+  onAnalyseComplete={(resultat) => {
+    console.log('Analyse terminée:', resultat);
+  }}
+/>
         {/* Suivi des étapes */}
         <div id="suiviEtapes">
           <SuiviEtapes />
