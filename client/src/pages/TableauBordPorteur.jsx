@@ -407,6 +407,7 @@ function TableauBordPorteur({ user, onLogout }) {
             </div>
           )}
         </div>
+        
 <AnalyseBMC 
   onAnalyseComplete={(resultat) => {
     console.log('Analyse terminée:', resultat);
