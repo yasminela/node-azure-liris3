@@ -40,6 +40,9 @@ const upload = multer({
 
 // POST /api/ai/analyser-bmc
 router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
+  console.log('📥 Requête reçue sur /api/ai/analyser-bmc');
+  console.log('📎 Fichier:', req.file?.originalname);
+  
   try {
     if (!req.file) {
       return res.status(400).json({ 
@@ -49,6 +52,7 @@ router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
     }
 
     const texteBMC = await extraireTextePDF(req.file.path);
+    console.log('📄 Texte extrait, longueur:', texteBMC.length);
     
     if (!texteBMC || texteBMC.length < 50) {
       return res.status(400).json({ 
@@ -64,8 +68,8 @@ router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
     const secteur = analyserSecteur(texteBMC);
     const feedback = genererFeedback(score, secteur);
 
-    // Nettoyage du fichier temporaire (optionnel)
-    // fs.unlinkSync(req.file.path);
+    console.log('📊 Score:', score);
+    console.log('🎯 Secteur:', secteur.nom);
 
     res.json({
       success: true,
@@ -77,7 +81,7 @@ router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur analyse BMC:', error);
+    console.error('❌ Erreur analyse BMC:', error);
     res.status(500).json({ 
       success: false,
       erreur: error.message,

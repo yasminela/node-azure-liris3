@@ -6,21 +6,17 @@ import {
   faGraduationCap, faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { iconColors } from '../styles/iconColors';
-import Mascotte from './Mascotte';
 
 function AnalyseBMC({ projetId, onAnalyseComplete }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resultat, setResultat] = useState(null);
   const [error, setError] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [mascotteResult, setMascotteResult] = useState(null);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setResultat(null);
     setError('');
-    setMascotteResult(null);
   };
 
   const handleSubmit = async (e) => {
@@ -30,11 +26,7 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       return;
     }
 
-    console.log('🚀 Début analyse...');
     setLoading(true);
-    setIsAnalyzing(true);  // ✅ Active la mascotte
-    setMascotteResult(null);
-    
     const formData = new FormData();
     formData.append('bmc', file);
 
@@ -42,18 +34,12 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       const response = await api.post('/ai/analyser-bmc', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      console.log('✅ Analyse terminée:', response.data);
       setResultat(response.data);
-      setMascotteResult(response.data);
       if (onAnalyseComplete) onAnalyseComplete(response.data);
     } catch (err) {
-      console.error('❌ Erreur analyse:', err);
-      const errorData = err.response?.data || { erreur: 'Erreur lors de l\'analyse' };
-      setError(errorData.erreur);
-      setMascotteResult({ success: false, erreur: errorData.erreur });
+      setError(err.response?.data?.erreur || 'Erreur lors de l\'analyse');
     } finally {
       setLoading(false);
-      setIsAnalyzing(false);
     }
   };
 
@@ -173,16 +159,6 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       display: 'flex',
       alignItems: 'center',
       gap: '8px'
-    },
-    alertBox: {
-      background: '#fef3c7',
-      color: '#92400e',
-      padding: '12px',
-      borderRadius: '12px',
-      marginBottom: '16px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
     }
   };
 
@@ -220,7 +196,7 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
         </div>
       )}
 
-      {resultat && !isAnalyzing && (
+      {resultat && !loading && (
         <div>
           <div style={styles.scoreContainer}>
             <div style={styles.scoreValue(resultat.scoreImpact)}>
@@ -240,13 +216,6 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
             {' '}{resultat.feedback}
           </div>
 
-          {resultat.scoreImpact < 35 && (
-            <div style={styles.alertBox}>
-              <FontAwesomeIcon icon={faExclamationTriangle} color="#92400e" />
-              Impact insuffisant – formations obligatoires recommandées
-            </div>
-          )}
-
           <div style={styles.formationsList}>
             <h4 style={{ marginBottom: '12px' }}>
               <FontAwesomeIcon icon={faGraduationCap} color={iconColors.primary} />
@@ -261,13 +230,6 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
           </div>
         </div>
       )}
-
-      {/* Mascotte - toujours affichée pendant l'analyse */}
-      <Mascotte 
-        isAnalyzing={isAnalyzing}
-        resultat={mascotteResult}
-        onClose={() => setMascotteResult(null)}
-      />
     </div>
   );
 }

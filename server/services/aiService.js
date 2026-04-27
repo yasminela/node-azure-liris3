@@ -1,5 +1,8 @@
 import fs from 'fs';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 // Extraction du texte PDF
 export const extraireTextePDF = async (cheminFichier) => {
@@ -94,10 +97,10 @@ export const analyserSecteur = (texte) => {
 // Feedback personnalisé
 export const genererFeedback = (score, secteur) => {
   if (score < 35) {
-    return "Impact potentiel à renforcer. Les formations recommandées vous aideront à mieux définir et mesurer votre impact.";
+    return "⚠️ Impact potentiel à renforcer. Les formations recommandées vous aideront à mieux définir et mesurer votre impact.";
   } else if (score < 65) {
-    return "Bon potentiel d'impact ! Continuez à structurer votre proposition de valeur et préparez-vous à passer à l'échelle.";
+    return "✅ Bon potentiel d'impact ! Continuez à structurer votre proposition de valeur et préparez-vous à passer à l'échelle.";
   } else {
-    return "Excellent impact détecté ! Votre projet a un fort potentiel. Concentrez-vous sur le passage à l'échelle et la recherche de financement.";
+    return "🎉 Excellent impact détecté ! Votre projet a un fort potentiel. Concentrez-vous sur le passage à l'échelle et la recherche de financement.";
   }
 };
