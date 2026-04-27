@@ -27,6 +27,7 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
     }
 
     setLoading(true);
+    setError('');
     const formData = new FormData();
     formData.append('bmc', file);
 
@@ -37,7 +38,9 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       setResultat(response.data);
       if (onAnalyseComplete) onAnalyseComplete(response.data);
     } catch (err) {
+      console.error('Erreur analyse:', err);
       setError(err.response?.data?.erreur || 'Erreur lors de l\'analyse');
+      setResultat(null);
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,8 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      transition: 'transform 0.2s'
     },
     scoreContainer: {
       textAlign: 'center',
@@ -159,6 +163,18 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       display: 'flex',
       alignItems: 'center',
       gap: '8px'
+    },
+    loadingState: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      padding: '20px',
+      color: iconColors.gray
+    },
+    buttonDisabled: {
+      opacity: 0.7,
+      cursor: 'not-allowed'
     }
   };
 
@@ -171,16 +187,26 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
 
       <form onSubmit={handleSubmit}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Déposez votre Business Model Canvas (PDF)</label>
+          <label style={styles.label}>📄 Déposez votre Business Model Canvas (PDF)</label>
           <input
             type="file"
             accept=".pdf"
             onChange={handleFileChange}
+            disabled={loading}
             style={styles.fileInput}
           />
         </div>
 
-        <button type="submit" disabled={loading} style={styles.submitBtn}>
+        <button 
+          type="submit" 
+          disabled={loading} 
+          style={{
+            ...styles.submitBtn,
+            ...(loading ? styles.buttonDisabled : {})
+          }}
+          onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
+        >
           {loading ? (
             <><FontAwesomeIcon icon={faSpinner} spin /> Analyse en cours...</>
           ) : (
@@ -188,6 +214,13 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
           )}
         </button>
       </form>
+
+      {loading && (
+        <div style={styles.loadingState}>
+          <FontAwesomeIcon icon={faSpinner} spin />
+          <span>Analyse du document en cours...</span>
+        </div>
+      )}
 
       {error && (
         <div style={styles.errorMsg}>
@@ -215,6 +248,13 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
             <FontAwesomeIcon icon={faInfoCircle} color="#166534" />
             {' '}{resultat.feedback}
           </div>
+
+          {resultat.scoreImpact < 35 && (
+            <div style={styles.alertBox}>
+              <FontAwesomeIcon icon={faExclamationTriangle} color="#92400e" />
+              ⚠️ Impact insuffisant – formations obligatoires recommandées
+            </div>
+          )}
 
           <div style={styles.formationsList}>
             <h4 style={{ marginBottom: '12px' }}>
