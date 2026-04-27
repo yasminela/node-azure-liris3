@@ -30,6 +30,10 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       return;
     }
 
+    console.log('📤 Début analyse...'); // ← DEBUG
+  setLoading(true);
+  setIsAnalyzing(true);
+
     setLoading(true);
     setIsAnalyzing(true);
     setMascotteResult(null);
@@ -65,6 +69,9 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
     if (score < 65) return 'Impact moyen';
     return 'Impact fort';
   };
+
+  setIsAnalyzing(true);
+console.log('🎯 isAnalyzing =', true); // ← DEBUG
 
   const styles = {
     container: {
