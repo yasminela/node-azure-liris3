@@ -6,17 +6,21 @@ import {
   faGraduationCap, faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { iconColors } from '../styles/iconColors';
+import Mascotte from './Mascotte';
 
 function AnalyseBMC({ projetId, onAnalyseComplete }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resultat, setResultat] = useState(null);
   const [error, setError] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [mascotteResult, setMascotteResult] = useState(null);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setResultat(null);
     setError('');
+    setMascotteResult(null);
   };
 
   const handleSubmit = async (e) => {
@@ -27,6 +31,9 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
     }
 
     setLoading(true);
+    setIsAnalyzing(true);
+    setMascotteResult(null);
+    
     const formData = new FormData();
     formData.append('bmc', file);
 
@@ -35,11 +42,15 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResultat(response.data);
+      setMascotteResult(response.data);
       if (onAnalyseComplete) onAnalyseComplete(response.data);
     } catch (err) {
-      setError(err.response?.data?.erreur || 'Erreur lors de l\'analyse');
+      const errorData = err.response?.data || { erreur: 'Erreur lors de l\'analyse' };
+      setError(errorData.erreur);
+      setMascotteResult({ success: false, erreur: errorData.erreur });
     } finally {
       setLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -98,7 +109,8 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      transition: 'transform 0.2s'
     },
     scoreContainer: {
       textAlign: 'center',
@@ -190,7 +202,13 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
           />
         </div>
 
-        <button type="submit" disabled={loading} style={styles.submitBtn}>
+        <button 
+          type="submit" 
+          disabled={loading} 
+          style={styles.submitBtn}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        >
           {loading ? (
             <><FontAwesomeIcon icon={faSpinner} spin /> Analyse en cours...</>
           ) : (
@@ -206,7 +224,7 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
         </div>
       )}
 
-      {resultat && (
+      {resultat && !isAnalyzing && (
         <div>
           <div style={styles.scoreContainer}>
             <div style={styles.scoreValue(resultat.scoreImpact)}>
@@ -247,6 +265,13 @@ function AnalyseBMC({ projetId, onAnalyseComplete }) {
           </div>
         </div>
       )}
+
+      {/* Mascotte */}
+      <Mascotte 
+        isAnalyzing={isAnalyzing}
+        resultat={mascotteResult}
+        onClose={() => setMascotteResult(null)}
+      />
     </div>
   );
 }
