@@ -1,11 +1,12 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-import Icon from './Icon';
-import { iconColors } from '../styles/iconColors';
 
 function PiedDePage() {
   const { darkMode } = useTheme();
   const currentYear = new Date().getFullYear();
+
+  // Logo selon le mode
+  const logoS2T = darkMode ? '/S2T_logo_dark.png' : '/S2T_logo.png';
 
   const styles = {
     container: {
@@ -45,21 +46,37 @@ function PiedDePage() {
       maxWidth: '320px',
       margin: '0 auto'
     },
-    partnerLogo: {
+    partnerLogoContainer: {
       width: '100px',
       height: '100px',
-      objectFit: 'contain',
-      filter: darkMode ? 'brightness(1.1)' : 'none'
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8fafc',
+      borderRadius: '20px',
+      padding: '12px'
+    },
+    partnerLogo: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain'
     },
     partnerName: {
       fontWeight: 'bold',
       fontSize: '20px',
       color: darkMode ? '#f1f5f9' : '#1e293b',
-      marginTop: '8px'
+      marginTop: '8px',
+      textAlign: 'center'
+    },
+    partnerSubtitle: {
+      fontSize: '12px',
+      color: darkMode ? '#94a3b8' : '#64748b',
+      textAlign: 'center',
+      letterSpacing: '0.5px'
     },
     partnerRole: {
       fontSize: '13px',
-      color: darkMode ? '#94a3b8' : '#64748b',
+      color: darkMode ? '#cbd5e1' : '#475569',
       textAlign: 'center',
       lineHeight: '1.5'
     },
@@ -89,23 +106,11 @@ function PiedDePage() {
       fontSize: '12px',
       color: darkMode ? '#94a3b8' : '#64748b'
     },
-    copyright: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
-    },
     developerInfo: {
       display: 'flex',
       alignItems: 'center',
       gap: '16px',
       flexWrap: 'wrap'
-    },
-    devLink: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      color: darkMode ? '#94a3b8' : '#64748b',
-      textDecoration: 'none'
     },
     links: {
       display: 'flex',
@@ -114,33 +119,31 @@ function PiedDePage() {
     link: {
       color: darkMode ? '#94a3b8' : '#64748b',
       textDecoration: 'none',
-      cursor: 'pointer'
-    },
-    heartIcon: {
-      color: '#ef4444',
-      margin: '0 2px'
+      cursor: 'pointer',
+      transition: 'color 0.2s ease'
     }
   };
 
   return (
     <div style={styles.container}>
-      {/* Section Partenaire S2T */}
       <div style={styles.partnersSection}>
         <div style={styles.partnersTitle}>
           🤝 PARTENAIRE OFFICIEL
         </div>
 
         <div style={styles.partnerCard}>
-          <img 
-            src="/S2T_logo.png" 
-            alt="S2T Tunisie" 
-            style={styles.partnerLogo}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              console.error('Logo non trouvé');
-            }}
-          />
+          <div style={styles.partnerLogoContainer}>
+            <img 
+              src={logoS2T}
+              alt="S2T Tunisie" 
+              style={styles.partnerLogo}
+              onError={(e) => {
+                e.target.src = 'https://placehold.co/100x100?text=S2T';
+              }}
+            />
+          </div>
           <div style={styles.partnerName}>S2T Tunisie</div>
+          <div style={styles.partnerSubtitle}>Smart Tunisian Technoparks</div>
           <div style={styles.partnerRole}>
             Pépinière d'entreprises<br />
             Accompagnement des startups innovantes
@@ -152,6 +155,14 @@ function PiedDePage() {
               target="_blank" 
               rel="noopener noreferrer"
               style={styles.socialLink}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#0077b5';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = darkMode ? '#334155' : '#f1f5f9';
+                e.currentTarget.style.color = darkMode ? '#cbd5e1' : '#64748b';
+              }}
             >
               🔗 LinkedIn
             </a>
@@ -160,6 +171,14 @@ function PiedDePage() {
               target="_blank" 
               rel="noopener noreferrer"
               style={styles.socialLink}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#1877f2';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = darkMode ? '#334155' : '#f1f5f9';
+                e.currentTarget.style.color = darkMode ? '#cbd5e1' : '#64748b';
+              }}
             >
                               Facebook
             </a>
@@ -167,17 +186,10 @@ function PiedDePage() {
         </div>
       </div>
 
-      {/* Footer Bas */}
       <div style={styles.footerBottom}>
-        <div style={styles.copyright}>
-          © {currentYear} Incubiny. Tous droits réservés.
-        </div>
-
+        <div>© {currentYear} Incubiny. Tous droits réservés.</div>
         <div style={styles.developerInfo}>
-          <div style={styles.devLink}>
-            💻 Développé par Yasmine La
-            <span style={styles.heartIcon}>❤️</span>
-          </div>
+          <span>💻 Développé par Yasmine La</span>
           <div style={styles.links}>
             <a href="#" style={styles.link}>Conditions</a>
             <a href="#" style={styles.link}>Confidentialité</a>

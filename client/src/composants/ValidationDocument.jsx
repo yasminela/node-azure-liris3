@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import Icon from './Icon';
-import { iconColors } from '../styles/iconColors';
+import { useTheme } from '../context/ThemeContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileAlt, faCheck, faTimes, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function ValidationDocument({ onValidate }) {
+  const { darkMode } = useTheme();
   const [soumissions, setSoumissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState({});
@@ -18,7 +20,7 @@ function ValidationDocument({ onValidate }) {
       const res = await api.get('/etapes/soumissions');
       setSoumissions(res.data || []);
     } catch (error) {
-      console.error('Erreur chargement soumissions:', error);
+      console.error('Erreur:', error);
     } finally {
       setLoading(false);
     }
@@ -26,9 +28,8 @@ function ValidationDocument({ onValidate }) {
 
   const handleValidation = async (id, estValide) => {
     const commentaire = feedback[id] || '';
-
     if (!estValide && !commentaire) {
-      alert('❌ Veuillez ajouter un commentaire pour expliquer le refus');
+      alert('Veuillez ajouter un commentaire');
       return;
     }
 
@@ -44,85 +45,68 @@ function ValidationDocument({ onValidate }) {
       if (onValidate) onValidate();
       setFeedback({ ...feedback, [id]: '' });
     } catch (error) {
-      console.error('Erreur validation:', error);
       alert('Erreur: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const styles = {
     container: {
-      background: 'white',
+      background: darkMode ? '#1e293b' : 'white',
       borderRadius: '20px',
       padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+      marginBottom: '24px'
     },
     title: {
-      fontSize: '20px',
+      fontSize: '18px',
       fontWeight: 'bold',
       marginBottom: '20px',
-      color: iconColors.black,
+      color: darkMode ? '#ffffff' : '#1e293b',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      borderLeft: `4px solid ${iconColors.primary}`,
+      borderLeft: '4px solid #667eea',
       paddingLeft: '16px'
     },
+    emptyState: {
+      textAlign: 'center',
+      padding: '40px',
+      color: darkMode ? '#94a3b8' : '#64748b'
+    },
     soumissionCard: {
-      border: '1px solid #e2e8f0',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
       borderRadius: '16px',
       padding: '20px',
-      marginBottom: '16px',
-      transition: 'box-shadow 0.2s'
-    },
-    soumissionHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginBottom: '12px',
-      flexWrap: 'wrap',
-      gap: '10px'
+      marginBottom: '16px'
     },
     soumissionTitle: {
       fontSize: '16px',
       fontWeight: 'bold',
-      color: iconColors.black
+      color: darkMode ? '#ffffff' : '#1e293b'
     },
     soumissionMeta: {
       fontSize: '12px',
-      color: iconColors.gray,
+      color: darkMode ? '#94a3b8' : '#64748b',
       marginTop: '4px'
     },
     commentairePorteur: {
       fontSize: '13px',
       marginTop: '10px',
       padding: '10px',
-      background: '#f8fafc',
+      background: darkMode ? '#0f172a' : '#f8fafc',
       borderRadius: '10px',
-      color: iconColors.gray
-    },
-    documentLink: {
-      marginTop: '8px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '6px',
-      color: iconColors.primary,
-      textDecoration: 'none',
-      fontSize: '13px'
+      color: darkMode ? '#cbd5e1' : '#475569'
     },
     textarea: {
       width: '100%',
       padding: '12px',
       borderRadius: '12px',
-      border: '1px solid #e2e8f0',
+      border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
+      background: darkMode ? '#0f172a' : 'white',
+      color: darkMode ? '#f1f5f9' : '#1e293b',
       marginBottom: '12px',
-      fontSize: '14px',
-      fontFamily: 'inherit',
-      resize: 'vertical'
+      fontSize: '14px'
     },
-    buttonGroup: {
-      display: 'flex',
-      gap: '12px'
-    },
+    buttonGroup: { display: 'flex', gap: '12px' },
     btnValid: {
       background: '#10b981',
       color: 'white',
@@ -132,9 +116,7 @@ function ValidationDocument({ onValidate }) {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      fontWeight: '500',
-      transition: 'transform 0.2s'
+      gap: '8px'
     },
     btnRefuse: {
       background: '#ef4444',
@@ -145,29 +127,14 @@ function ValidationDocument({ onValidate }) {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      fontWeight: '500',
-      transition: 'transform 0.2s'
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '48px',
-      color: iconColors.grayLight
-    },
-    loadingState: {
-      textAlign: 'center',
-      padding: '48px',
-      color: iconColors.gray
+      gap: '8px'
     }
   };
 
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.loadingState}>
-          <Icon name="pending" size={32} color={iconColors.grayLight} />
-          <p>Chargement des soumissions...</p>
-        </div>
+        <div style={styles.emptyState}>Chargement...</div>
       </div>
     );
   }
@@ -175,75 +142,46 @@ function ValidationDocument({ onValidate }) {
   return (
     <div style={styles.container}>
       <div style={styles.title}>
-        <Icon name="document" size={22} color={iconColors.primary} />
+        <FontAwesomeIcon icon={faFileAlt} color="#667eea" />
         Documents à valider
       </div>
 
       {soumissions.length === 0 ? (
         <div style={styles.emptyState}>
-          <Icon name="no_notification" size={48} color={iconColors.grayLight} />
+          <FontAwesomeIcon icon={faFileAlt} size="32px" style={{ marginBottom: '12px', opacity: 0.5 }} />
           <p>Aucune soumission en attente</p>
         </div>
       ) : (
-        soumissions.map((s) => (
+        soumissions.map(s => (
           <div key={s._id} style={styles.soumissionCard}>
-            <div style={styles.soumissionHeader}>
-              <div>
-                <div style={styles.soumissionTitle}>{s.titre}</div>
-                <div style={styles.soumissionMeta}>
-                  Porteur: {s.porteurId?.firstName} {s.porteurId?.lastName}
-                </div>
-                <div style={styles.soumissionMeta}>
-                  📅 Soumis le: {new Date(s.dateSoumission).toLocaleDateString('fr-FR')}
-                </div>
-                {s.commentairePorteur && (
-                  <div style={styles.commentairePorteur}>
-                    <strong>💬 Commentaire du porteur:</strong><br />
-                    {s.commentairePorteur}
-                  </div>
-                )}
-                {s.documentUrl && (
-                  <a 
-                    href={`http://localhost:5001/${s.documentUrl}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={styles.documentLink}
-                  >
-                    <Icon name="file" size={14} color={iconColors.primary} />
-                    📄 Voir le document
-                  </a>
-                )}
-              </div>
+            <div style={styles.soumissionTitle}>{s.titre}</div>
+            <div style={styles.soumissionMeta}>
+              Porteur: {s.porteurId?.firstName} {s.porteurId?.lastName}
             </div>
-
-            <div style={{ marginTop: '16px' }}>
-              <textarea
-                placeholder="✏️ Feedback pour le porteur (obligatoire pour un refus)..."
-                value={feedback[s._id] || ''}
-                onChange={(e) => setFeedback({ ...feedback, [s._id]: e.target.value })}
-                style={styles.textarea}
-                rows="3"
-              />
-              <div style={styles.buttonGroup}>
-                <button 
-                  onClick={() => handleValidation(s._id, true)} 
-                  style={styles.btnValid}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <Icon name="check_st" size={16} color="white" />
-                  Valider
-                </button>
-                <button 
-                  onClick={() => handleValidation(s._id, false)} 
-                  style={styles.btnRefuse}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <Icon name="exclamation_point" size={16} color="white" />
-                  Refuser
-                </button>
+            <div style={styles.soumissionMeta}>
+              Soumis le: {new Date(s.dateSoumission).toLocaleDateString()}
+            </div>
+            {s.commentairePorteur && (
+              <div style={styles.commentairePorteur}>
+                <strong>💬 Commentaire:</strong> {s.commentairePorteur}
               </div>
+            )}
+
+            <textarea
+              placeholder="Feedback pour le porteur..."
+              value={feedback[s._id] || ''}
+              onChange={(e) => setFeedback({ ...feedback, [s._id]: e.target.value })}
+              style={styles.textarea}
+              rows="2"
+            />
+            
+            <div style={styles.buttonGroup}>
+              <button onClick={() => handleValidation(s._id, true)} style={styles.btnValid}>
+                <FontAwesomeIcon icon={faCheck} size="sm" /> Valider
+              </button>
+              <button onClick={() => handleValidation(s._id, false)} style={styles.btnRefuse}>
+                <FontAwesomeIcon icon={faTimes} size="sm" /> Refuser
+              </button>
             </div>
           </div>
         ))

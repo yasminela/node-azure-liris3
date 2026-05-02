@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -72,16 +72,15 @@ router.put('/me', auth, async (req, res) => {
   }
 });
 
-// UPLOAD AVATAR - Route corrigée
+// UPLOAD AVATAR
 router.put('/avatar', auth, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Aucun fichier uploadé' });
     }
     
-    // Supprimer l'ancien avatar s'il existe
     const oldUser = await Utilisateur.findById(req.user.id);
-    if (oldUser.avatar) {
+    if (oldUser && oldUser.avatar) {
       const oldPath = path.join('.', oldUser.avatar);
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
@@ -103,11 +102,11 @@ router.put('/avatar', auth, upload.single('avatar'), async (req, res) => {
   }
 });
 
-// SUPPRIMER AVATAR - Route corrigée
+// SUPPRIMER AVATAR
 router.delete('/avatar', auth, async (req, res) => {
   try {
     const user = await Utilisateur.findById(req.user.id);
-    if (user.avatar) {
+    if (user && user.avatar) {
       const oldPath = path.join('.', user.avatar);
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
@@ -115,7 +114,7 @@ router.delete('/avatar', auth, async (req, res) => {
     }
     
     await Utilisateur.findByIdAndUpdate(req.user.id, { avatar: null });
-    res.json({ message: 'Avatar supprimé' });
+    res.json({ message: 'Avatar supprimé avec succès' });
   } catch (error) {
     console.error('Erreur suppression avatar:', error);
     res.status(500).json({ message: error.message });

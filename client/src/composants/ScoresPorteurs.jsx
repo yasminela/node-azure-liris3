@@ -1,118 +1,169 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faMedal, faUser, faChartLine } from '@fortawesome/free-solid-svg-icons';
-import { iconColors } from '../styles/iconColors';
+import { faChartLine, faUser, faEnvelope, faPercent, faTrophy } from '@fortawesome/free-solid-svg-icons';
 
 function ScoresPorteurs() {
+  const { darkMode } = useTheme();
   const [porteurs, setPorteurs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    moyenne: 0,
+    excellent: 0,
+    bon: 0,
+    aAmeliorer: 0
+  });
 
   useEffect(() => {
-    loadScores();
+    loadPorteurs();
   }, []);
 
-  const loadScores = async () => {
+  const loadPorteurs = async () => {
     try {
-      const res = await api.get('/profil/tous-scores');
-      setPorteurs(res.data);
+      const res = await api.get('/utilisateurs');
+      const porteursList = res.data.filter(u => u.role === 'porteur');
+      setPorteurs(porteursList);
+      
+      // Calculer les stats
+      const scores = porteursList.map(p => p.scoreCompletions || 0);
+      const moyenne = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+      
+      setStats({
+        total: porteursList.length,
+        moyenne: moyenne,
+        excellent: porteursList.filter(p => (p.scoreCompletions || 0) >= 70).length,
+        bon: porteursList.filter(p => (p.scoreCompletions || 0) >= 40 && (p.scoreCompletions || 0) < 70).length,
+        aAmeliorer: porteursList.filter(p => (p.scoreCompletions || 0) < 40).length
+      });
     } catch (error) {
-      console.error('Erreur chargement scores:', error);
+      console.error('Erreur chargement porteurs:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return '#10b981';
-    if (score >= 50) return '#f59e0b';
+    if (score >= 70) return '#10b981';
+    if (score >= 40) return '#f59e0b';
     return '#ef4444';
   };
 
-  const getMedaille = (index) => {
-    if (index === 0) return <FontAwesomeIcon icon={faTrophy} color="#f59e0b" />;
-    if (index === 1) return <FontAwesomeIcon icon={faMedal} color="#94a3b8" />;
-    if (index === 2) return <FontAwesomeIcon icon={faMedal} color="#cd7f32" />;
-    return null;
+  const getScoreLevel = (score) => {
+    if (score >= 70) return 'Excellent';
+    if (score >= 40) return 'Bon';
+    return 'À améliorer';
   };
 
   const styles = {
     container: {
-      background: iconColors.white,
+      background: darkMode ? '#1e293b' : 'white',
       borderRadius: '20px',
       padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+      marginBottom: '24px'
     },
     title: {
       fontSize: '20px',
       fontWeight: 'bold',
       marginBottom: '20px',
-      color: iconColors.black,
+      color: darkMode ? '#ffffff' : '#1e293b',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      borderLeft: `4px solid ${iconColors.primary}`,
+      borderLeft: '4px solid #667eea',
       paddingLeft: '16px'
     },
-    statsContainer: {
+    statsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gap: '16px',
-      marginBottom: '20px'
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '20px',
+      marginBottom: '24px'
     },
     statCard: {
-      background: '#f8fafc',
+      background: darkMode ? '#0f172a' : '#f8fafc',
       borderRadius: '16px',
-      padding: '16px'
+      padding: '20px',
+      textAlign: 'center',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
-    statNumber: { fontSize: '28px', fontWeight: 'bold', color: iconColors.primary },
-    table: { width: '100%', borderCollapse: 'collapse' },
-    th: { padding: '12px', textAlign: 'left', background: iconColors.grayBg, borderBottom: '2px solid #e2e8f0' },
-    td: { padding: '12px', borderBottom: '1px solid #e2e8f0' },
+    statValue: {
+      fontSize: '32px',
+      fontWeight: 'bold',
+      color: darkMode ? '#ffffff' : '#1e293b'
+    },
+    statLabel: {
+      fontSize: '13px',
+      color: darkMode ? '#cbd5e1' : '#64748b',
+      marginTop: '8px'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      marginTop: '20px'
+    },
+    th: {
+      padding: '12px',
+      textAlign: 'left',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      color: darkMode ? '#e2e8f0' : '#475569',
+      fontWeight: '600',
+      fontSize: '13px',
+      borderBottom: `2px solid ${darkMode ? '#475569' : '#e2e8f0'}`
+    },
+    td: {
+      padding: '12px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      fontSize: '14px',
+      color: darkMode ? '#cbd5e1' : '#475569'
+    },
     badge: (score) => ({
       display: 'inline-block',
-      padding: '4px 10px',
+      padding: '4px 12px',
       borderRadius: '20px',
       fontSize: '12px',
       fontWeight: 'bold',
       background: getScoreColor(score) + '20',
       color: getScoreColor(score)
-    })
+    }),
+    emptyState: {
+      textAlign: 'center',
+      padding: '40px',
+      color: darkMode ? '#94a3b8' : '#64748b'
+    }
   };
 
-  if (loading) return <div style={styles.container}>Chargement des scores...</div>;
-
-  const stats = {
-    complet: porteurs.filter(p => p.score >= 80).length,
-    moyen: porteurs.filter(p => p.score >= 50 && p.score < 80).length,
-    faible: porteurs.filter(p => p.score < 50).length,
-    moyenne: porteurs.length > 0 ? Math.round(porteurs.reduce((a, b) => a + b.score, 0) / porteurs.length) : 0
-  };
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.emptyState}>Chargement des scores...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
       <div style={styles.title}>
-        <FontAwesomeIcon icon={faChartLine} color={iconColors.primary} />
+        <FontAwesomeIcon icon={faTrophy} color="#667eea" />
         Scores de complétion des porteurs
       </div>
 
-      <div style={styles.statsContainer}>
+      <div style={styles.statsGrid}>
         <div style={styles.statCard}>
-          <div style={styles.statNumber}>{stats.complet}</div>
-          <div>Profil complet (≥80%)</div>
+          <div style={styles.statValue}>{stats.total}</div>
+          <div style={styles.statLabel}>Porteurs</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statNumber}>{stats.moyen}</div>
-          <div>Profil en progression (50-79%)</div>
+          <div style={styles.statValue}>{stats.excellent}</div>
+          <div style={styles.statLabel}>Score Excellent (≥70%)</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statNumber}>{stats.faible}</div>
-          <div>Profil à compléter (&lt;50%)</div>
+          <div style={styles.statValue}>{stats.bon}</div>
+          <div style={styles.statLabel}>Score Bon (40-69%)</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statNumber}>{stats.moyenne}%</div>
-          <div>Score moyen global</div>
+          <div style={styles.statValue}>{stats.aAmeliorer}</div>
+          <div style={styles.statLabel}>À améliorer ({'<40%'})</div>
         </div>
       </div>
 
@@ -120,7 +171,6 @@ function ScoresPorteurs() {
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>#</th>
               <th style={styles.th}>Porteur</th>
               <th style={styles.th}>Email</th>
               <th style={styles.th}>Score</th>
@@ -128,25 +178,22 @@ function ScoresPorteurs() {
             </tr>
           </thead>
           <tbody>
-            {porteurs.map((porteur, index) => (
-              <tr key={porteur.id}>
+            {porteurs.map(p => (
+              <tr key={p._id}>
                 <td style={styles.td}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {getMedaille(index)}
-                    <span>{index + 1}</span>
-                  </div>
+                  <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#667eea' }} />
+                  {p.firstName} {p.lastName}
                 </td>
                 <td style={styles.td}>
-                  <strong>{porteur.firstName} {porteur.lastName}</strong>
-                  {porteur.nomProjet && <div style={{ fontSize: '11px', color: '#64748b' }}>Projet: {porteur.nomProjet}</div>}
-                </td>
-                <td style={styles.td}>{porteur.email}</td>
-                <td style={styles.td}>
-                  <span style={styles.badge(porteur.score)}>{porteur.score}%</span>
+                  <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: '8px', color: '#667eea' }} />
+                  {p.email}
                 </td>
                 <td style={styles.td}>
-                  {porteur.score >= 80 ? '✅ Excellent' : porteur.score >= 50 ? '📊 En progression' : '⚠️ À compléter'}
+                  <span style={styles.badge(p.scoreCompletions || 0)}>
+                    {(p.scoreCompletions || 0)}%
+                  </span>
                 </td>
+                <td style={styles.td}>{getScoreLevel(p.scoreCompletions || 0)}</td>
               </tr>
             ))}
           </tbody>

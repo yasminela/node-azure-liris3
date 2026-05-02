@@ -1,4 +1,11 @@
-/* Variables globales pour les thèmes */
+/* Reset et base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Variables pour les thèmes */
 :root {
   --text-primary: #1e293b;
   --text-secondary: #475569;
@@ -17,93 +24,131 @@
   --card-bg: #1e293b;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-/* Style pour tous les boutons par défaut */
-button {
-  transition: all 0.2s ease;
+/* Container responsive */
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-button:hover {
-  transform: translateY(-1px);
+@media (min-width: 640px) {
+  .container {
+    padding: 0 24px;
+  }
 }
 
-/* Style pour les cartes */
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}
+
+/* Grilles responsives */
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Cartes responsives */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 16px;
+  padding: 20px;
   transition: all 0.3s ease;
 }
 
-/* Style pour les inputs */
-input, textarea, select {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+@media (max-width: 640px) {
+  .card {
+    padding: 16px;
+  }
 }
 
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #9333ea;
-  box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+/* Tableaux responsives */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Style pour les tables */
 table {
   width: 100%;
+  min-width: 500px;
   border-collapse: collapse;
 }
 
-th {
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  border-bottom: 2px solid var(--border-color);
-}
-
-td {
+th, td {
+  padding: 12px;
+  text-align: left;
   border-bottom: 1px solid var(--border-color);
+}
+
+@media (max-width: 640px) {
+  th, td {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+/* Boutons responsives */
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+@media (max-width: 640px) {
+  button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Formulaires responsives */
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
   color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
 }
 
-/* Animation pour le mode sombre */
-* {
-  transition: background-color 0.3s ease, 
-              border-color 0.3s ease,
-              color 0.3s ease,
-              box-shadow 0.3s ease;
-}
-
-/* Scrollbar pour mode sombre */
-.dark ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: #1e293b;
-  border-radius: 10px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 10px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+@media (max-width: 640px) {
+  input, textarea, select {
+    padding: 10px;
+    font-size: 13px;
+  }
 }
 
 /* Loading spinner */
@@ -112,11 +157,93 @@ td {
   to { transform: rotate(360deg); }
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  gap: 16px;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(102, 126, 234, 0.2);
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@media (max-width: 640px) {
+  .loading-spinner {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Scrollbar pour mode sombre */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive pour la navbar */
+@media (max-width: 768px) {
+  .nav-desktop {
+    display: none !important;
+  }
+  
+  .nav-mobile-btn {
+    display: block !important;
+  }
+  
+  h1 {
+    font-size: 22px;
+  }
+  
+  h2 {
+    font-size: 18px;
+  }
+  
+  h3 {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .nav-mobile-btn {
+    display: none !important;
+  }
+  
+  .nav-mobile-menu {
+    display: none !important;
+  }
+}
+
+/* Typographie responsive */
+h1 {
+  font-size: clamp(22px, 5vw, 28px);
+}
+
+h2 {
+  font-size: clamp(18px, 4vw, 24px);
+}
+
+h3 {
+  font-size: clamp(16px, 3.5vw, 20px);
+}
+
+p, span, a, li {
+  font-size: clamp(13px, 3vw, 16px);
 }

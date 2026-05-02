@@ -65,3 +65,18 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
 });
+
+// Créer les dossiers nécessaires
+const dirs = [
+  './telechargements',
+  './telechargements/avatars',
+  './telechargements/ia'
+];
+
+dirs.forEach(dir => {
+  const fullPath = path.join(__dirname, dir);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+    console.log(`📁 Dossier créé: ${fullPath}`);
+  }
+});

@@ -10,16 +10,13 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Synchronize avatar when user prop changes
   useEffect(() => {
     setCurrentAvatar(user?.avatar || null);
   }, [user?.avatar]);
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target) && 
-          fileInputRef.current && !fileInputRef.current.contains(event.target)) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
       }
     };
@@ -69,35 +66,16 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       const res = await api.put('/utilisateurs/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
-      // Update local state with new avatar URL
-      const newAvatarUrl = res.data.avatar;
-      setCurrentAvatar(newAvatarUrl);
-      
-      // Notify parent component
-      if (onAvatarUpdate) {
-        onAvatarUpdate(newAvatarUrl);
-      }
-      
-      // Update user object in localStorage if present
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        userData.avatar = newAvatarUrl;
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      
+      setCurrentAvatar(res.data.avatar);
+      if (onAvatarUpdate) onAvatarUpdate(res.data.avatar);
       alert('✅ Photo de profil mise à jour !');
       setShowMenu(false);
     } catch (error) {
       console.error('Erreur upload:', error);
-      alert(error.response?.data?.message || '❌ Erreur lors de l\'upload');
+      alert('❌ Erreur lors de l\'upload: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      e.target.value = '';
     }
   };
 
@@ -107,28 +85,13 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
     setUploading(true);
     try {
       await api.delete('/utilisateurs/avatar');
-      
-      // Clear local avatar state
       setCurrentAvatar(null);
-      
-      // Notify parent component
-      if (onAvatarUpdate) {
-        onAvatarUpdate(null);
-      }
-      
-      // Update user object in localStorage
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        userData.avatar = null;
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      
+      if (onAvatarUpdate) onAvatarUpdate(null);
       alert('✅ Photo supprimée');
       setShowMenu(false);
     } catch (error) {
       console.error('Erreur suppression:', error);
-      alert(error.response?.data?.message || '❌ Erreur lors de la suppression');
+      alert('❌ Erreur lors de la suppression: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
     }
@@ -143,19 +106,12 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
   const currentSize = sizeStyles[size] || sizeStyles.small;
 
   const styles = {
-    container: { 
-      position: 'relative', 
-      display: 'inline-block' 
-    },
+    container: { position: 'relative', display: 'inline-block' },
     avatarWrapper: {
       position: 'relative',
       cursor: 'pointer',
       borderRadius: '50%',
-      overflow: 'hidden',
-      transition: 'transform 0.2s ease',
-      ':hover': {
-        transform: 'scale(1.05)'
-      }
+      overflow: 'hidden'
     },
     avatarImage: {
       width: currentSize.width,
@@ -174,7 +130,7 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       justifyContent: 'center',
       fontWeight: 'bold',
       color: 'white',
-      fontSize: currentSize.fontSize
+      ...currentSize
     },
     overlay: {
       position: 'absolute',
@@ -183,12 +139,13 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       right: 0,
       bottom: 0,
       borderRadius: '50%',
-      background: 'rgba(0,0,0,0.6)',
+      background: 'rgba(0,0,0,0.5)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       opacity: 0,
-      transition: 'opacity 0.2s ease'
+      transition: 'opacity 0.2s',
+      borderRadius: '50%'
     },
     loadingOverlay: {
       position: 'absolute',
@@ -201,7 +158,7 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '20px'
+      borderRadius: '50%'
     },
     menu: {
       position: 'absolute',
@@ -211,49 +168,39 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       marginTop: '8px',
       background: darkMode ? '#1e293b' : 'white',
       borderRadius: '12px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       zIndex: 1000,
-      minWidth: '180px',
+      minWidth: '160px',
       overflow: 'hidden',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-      animation: 'fadeIn 0.2s ease'
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     menuItem: {
       padding: '10px 16px',
       cursor: 'pointer',
-      fontSize: '14px',
+      fontSize: '13px',
       color: darkMode ? '#f1f5f9' : '#1e293b',
-      transition: 'all 0.2s ease',
+      transition: 'background 0.2s',
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#f1f5f9'}`
+      gap: '8px'
+    },
+    menuItemDanger: {
+      color: '#ef4444'
     }
   };
 
-  // Construct full avatar URL
   const getAvatarUrl = () => {
-    if (!currentAvatar) return null;
-    // Check if it's already a full URL
-    if (currentAvatar.startsWith('http')) return currentAvatar;
-    // Otherwise, prepend base URL
-    return `http://localhost:5001${currentAvatar}`;
+    if (currentAvatar) {
+      if (currentAvatar.startsWith('http')) {
+        return currentAvatar;
+      }
+      return `http://localhost:5001${currentAvatar}`;
+    }
+    return null;
   };
 
-  const avatarContent = currentAvatar ? (
-    <img 
-      src={getAvatarUrl()} 
-      alt="Avatar" 
-      style={styles.avatarImage}
-      onError={(e) => {
-        // If image fails to load, fall back to placeholder
-        console.error('Failed to load avatar image');
-        setCurrentAvatar(null);
-      }}
-    />
-  ) : (
-    <div style={styles.avatarPlaceholder}>{getInitials()}</div>
-  );
+  const avatarUrl = getAvatarUrl();
+  const hasAvatar = !!avatarUrl;
 
   return (
     <div style={styles.container}>
@@ -261,58 +208,39 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
         style={styles.avatarWrapper}
         onClick={() => !uploading && setShowMenu(!showMenu)}
         onMouseEnter={(e) => {
-          if (!uploading) {
-            const overlay = e.currentTarget.querySelector('.avatar-overlay');
-            if (overlay) overlay.style.opacity = '1';
+          if (!uploading && e.currentTarget.querySelector('.overlay')) {
+            e.currentTarget.querySelector('.overlay').style.opacity = '1';
           }
         }}
         onMouseLeave={(e) => {
-          if (!uploading) {
-            const overlay = e.currentTarget.querySelector('.avatar-overlay');
-            if (overlay) overlay.style.opacity = '0';
+          if (!uploading && e.currentTarget.querySelector('.overlay')) {
+            e.currentTarget.querySelector('.overlay').style.opacity = '0';
           }
         }}
       >
-        {avatarContent}
-        <div className="avatar-overlay" style={styles.overlay}>
-          <span role="img" aria-label="camera">📷</span>
+        {hasAvatar ? (
+          <img src={avatarUrl} alt="Avatar" style={styles.avatarImage} />
+        ) : (
+          <div style={styles.avatarPlaceholder}>{getInitials()}</div>
+        )}
+        <div className="overlay" style={styles.overlay}>
+          <span>📷</span>
         </div>
         {uploading && (
           <div style={styles.loadingOverlay}>
-            <span role="img" aria-label="loading">⏳</span>
+            <span>⏳</span>
           </div>
         )}
       </div>
 
       {showMenu && !uploading && (
         <div style={styles.menu} ref={menuRef}>
-          <div 
-            style={styles.menuItem} 
-            onClick={() => {
-              fileInputRef.current?.click();
-              setShowMenu(false);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = darkMode ? '#334155' : '#f8fafc';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            <span>📷</span> Changer la photo
+          <div style={styles.menuItem} onClick={() => fileInputRef.current?.click()}>
+            📷 Changer la photo
           </div>
-          {currentAvatar && (
-            <div 
-              style={styles.menuItem} 
-              onClick={handleDeleteAvatar}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = darkMode ? '#334155' : '#f8fafc';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <span>🗑️</span> Supprimer
+          {hasAvatar && (
+            <div style={{ ...styles.menuItem, ...styles.menuItemDanger }} onClick={handleDeleteAvatar}>
+              🗑️ Supprimer
             </div>
           )}
         </div>
@@ -322,22 +250,9 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept="image/jpeg,image/png,image/gif,image/webp"
+        accept="image/*"
         onChange={handleFileSelect}
       />
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }
