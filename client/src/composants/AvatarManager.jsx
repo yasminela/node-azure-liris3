@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../utils/api';
 
@@ -6,8 +6,26 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
   const { darkMode } = useTheme();
   const [uploading, setUploading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState(user?.avatar || null);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
+
+  // Synchronize avatar when user prop changes
+  useEffect(() => {
+    setCurrentAvatar(user?.avatar || null);
+  }, [user?.avatar]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && 
+          fileInputRef.current && !fileInputRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getInitials = () => {
     if (user?.firstName && user?.lastName) {
@@ -32,8 +50,6 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    console.log('Token présent:', !!localStorage.getItem('token'));
-  console.log('User:', localStorage.getItem('user'));
 
     if (!file.type.startsWith('image/')) {
       alert('❌ Veuillez sélectionner une image (JPEG, PNG, GIF)');
@@ -53,14 +69,35 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       const res = await api.put('/utilisateurs/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      if (onAvatarUpdate) onAvatarUpdate(res.data.avatar);
+      
+      // Update local state with new avatar URL
+      const newAvatarUrl = res.data.avatar;
+      setCurrentAvatar(newAvatarUrl);
+      
+      // Notify parent component
+      if (onAvatarUpdate) {
+        onAvatarUpdate(newAvatarUrl);
+      }
+      
+      // Update user object in localStorage if present
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        userData.avatar = newAvatarUrl;
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
+      
       alert('✅ Photo de profil mise à jour !');
       setShowMenu(false);
     } catch (error) {
       console.error('Erreur upload:', error);
-      alert('❌ Erreur lors de l\'upload');
+      alert(error.response?.data?.message || '❌ Erreur lors de l\'upload');
     } finally {
       setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -70,12 +107,28 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
     setUploading(true);
     try {
       await api.delete('/utilisateurs/avatar');
-      if (onAvatarUpdate) onAvatarUpdate(null);
+      
+      // Clear local avatar state
+      setCurrentAvatar(null);
+      
+      // Notify parent component
+      if (onAvatarUpdate) {
+        onAvatarUpdate(null);
+      }
+      
+      // Update user object in localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        userData.avatar = null;
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
+      
       alert('✅ Photo supprimée');
       setShowMenu(false);
     } catch (error) {
       console.error('Erreur suppression:', error);
-      alert('❌ Erreur lors de la suppression');
+      alert(error.response?.data?.message || '❌ Erreur lors de la suppression');
     } finally {
       setUploading(false);
     }
@@ -90,12 +143,19 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
   const currentSize = sizeStyles[size] || sizeStyles.small;
 
   const styles = {
-    container: { position: 'relative', display: 'inline-block' },
+    container: { 
+      position: 'relative', 
+      display: 'inline-block' 
+    },
     avatarWrapper: {
       position: 'relative',
       cursor: 'pointer',
       borderRadius: '50%',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      transition: 'transform 0.2s ease',
+      ':hover': {
+        transform: 'scale(1.05)'
+      }
     },
     avatarImage: {
       width: currentSize.width,
@@ -114,7 +174,7 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       justifyContent: 'center',
       fontWeight: 'bold',
       color: 'white',
-      ...currentSize
+      fontSize: currentSize.fontSize
     },
     overlay: {
       position: 'absolute',
@@ -123,12 +183,12 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       right: 0,
       bottom: 0,
       borderRadius: '50%',
-      background: 'rgba(0,0,0,0.5)',
+      background: 'rgba(0,0,0,0.6)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       opacity: 0,
-      transition: 'opacity 0.2s'
+      transition: 'opacity 0.2s ease'
     },
     loadingOverlay: {
       position: 'absolute',
@@ -140,7 +200,8 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       background: 'rgba(0,0,0,0.7)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      fontSize: '20px'
     },
     menu: {
       position: 'absolute',
@@ -150,26 +211,46 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
       marginTop: '8px',
       background: darkMode ? '#1e293b' : 'white',
       borderRadius: '12px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-      zIndex: 100,
-      minWidth: '160px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      zIndex: 1000,
+      minWidth: '180px',
       overflow: 'hidden',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      animation: 'fadeIn 0.2s ease'
     },
     menuItem: {
       padding: '10px 16px',
       cursor: 'pointer',
-      fontSize: '13px',
+      fontSize: '14px',
       color: darkMode ? '#f1f5f9' : '#1e293b',
-      transition: 'background 0.2s',
+      transition: 'all 0.2s ease',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '10px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#f1f5f9'}`
     }
   };
 
-  const avatarContent = user?.avatar ? (
-    <img src={`http://localhost:5001${user.avatar}`} alt="Avatar" style={styles.avatarImage} />
+  // Construct full avatar URL
+  const getAvatarUrl = () => {
+    if (!currentAvatar) return null;
+    // Check if it's already a full URL
+    if (currentAvatar.startsWith('http')) return currentAvatar;
+    // Otherwise, prepend base URL
+    return `http://localhost:5001${currentAvatar}`;
+  };
+
+  const avatarContent = currentAvatar ? (
+    <img 
+      src={getAvatarUrl()} 
+      alt="Avatar" 
+      style={styles.avatarImage}
+      onError={(e) => {
+        // If image fails to load, fall back to placeholder
+        console.error('Failed to load avatar image');
+        setCurrentAvatar(null);
+      }}
+    />
   ) : (
     <div style={styles.avatarPlaceholder}>{getInitials()}</div>
   );
@@ -180,31 +261,58 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
         style={styles.avatarWrapper}
         onClick={() => !uploading && setShowMenu(!showMenu)}
         onMouseEnter={(e) => {
-          if (!uploading) e.currentTarget.querySelector('.overlay').style.opacity = '1';
+          if (!uploading) {
+            const overlay = e.currentTarget.querySelector('.avatar-overlay');
+            if (overlay) overlay.style.opacity = '1';
+          }
         }}
         onMouseLeave={(e) => {
-          if (!uploading) e.currentTarget.querySelector('.overlay').style.opacity = '0';
+          if (!uploading) {
+            const overlay = e.currentTarget.querySelector('.avatar-overlay');
+            if (overlay) overlay.style.opacity = '0';
+          }
         }}
       >
         {avatarContent}
-        <div className="overlay" style={styles.overlay}>
-          <span>📷</span>
+        <div className="avatar-overlay" style={styles.overlay}>
+          <span role="img" aria-label="camera">📷</span>
         </div>
         {uploading && (
           <div style={styles.loadingOverlay}>
-            <span>⏳</span>
+            <span role="img" aria-label="loading">⏳</span>
           </div>
         )}
       </div>
 
       {showMenu && !uploading && (
         <div style={styles.menu} ref={menuRef}>
-          <div style={styles.menuItem} onClick={() => fileInputRef.current?.click()}>
-            📷 Changer la photo
+          <div 
+            style={styles.menuItem} 
+            onClick={() => {
+              fileInputRef.current?.click();
+              setShowMenu(false);
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = darkMode ? '#334155' : '#f8fafc';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <span>📷</span> Changer la photo
           </div>
-          {user?.avatar && (
-            <div style={styles.menuItem} onClick={handleDeleteAvatar}>
-              🗑️ Supprimer
+          {currentAvatar && (
+            <div 
+              style={styles.menuItem} 
+              onClick={handleDeleteAvatar}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = darkMode ? '#334155' : '#f8fafc';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <span>🗑️</span> Supprimer
             </div>
           )}
         </div>
@@ -214,9 +322,22 @@ function AvatarManager({ user, onAvatarUpdate, size = 'small' }) {
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp"
         onChange={handleFileSelect}
       />
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
