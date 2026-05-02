@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Connexion from './pages/Connexion';
 import TableauBordPorteur from './pages/TableauBordPorteur';
 import TableauBordAdmin from './pages/TableauBordAdmin';
@@ -55,18 +56,10 @@ function App() {
   }
 
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
+    <LanguageProvider>
       <ThemeProvider>
         <Routes>
-          <Route 
-            path="/login" 
-            element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} 
-          />
+          <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
           <Route 
             path="/" 
             element={
@@ -79,18 +72,12 @@ function App() {
               )
             } 
           />
-          <Route 
-            path="/calendrier" 
-            element={user ? <Calendrier /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/etapes" 
-            element={user ? <SuiviEtapes /> : <Navigate to="/login" />} 
-          />
+          <Route path="/calendrier" element={user ? <Calendrier /> : <Navigate to="/login" />} />
+          <Route path="/etapes" element={user ? <SuiviEtapes /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </ThemeProvider>
-    </BrowserRouter>
+    </LanguageProvider>
   );
 }
 

@@ -10,7 +10,7 @@ const utilisateurSchema = new mongoose.Schema({
   faculte: { type: String, default: '' },
   residence: { type: String, default: '' },
   nomProjet: { type: String, default: '' },
-  createdAt: { type: Date, default: Date.now }
-});
+  avatar: { type: String, default: null }  // ← AJOUTEZ CETTE LIGNE
+}, { timestamps: true });
 
 export default mongoose.model('Utilisateur', utilisateurSchema);

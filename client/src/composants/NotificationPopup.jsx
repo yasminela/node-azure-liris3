@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import Icon from './Icon';
+import { useTheme } from '../context/ThemeContext';
+import { useLocation } from 'react-router-dom';
 
 function NotificationPopup() {
+  const { darkMode } = useTheme();
+  const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [show, setShow] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -13,6 +16,10 @@ function NotificationPopup() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    setShow(false);
+  }, [location]);
+
   const loadNotifications = async () => {
     try {
       const res = await api.get('/notifications/mes-notifications');
@@ -20,7 +27,7 @@ function NotificationPopup() {
       const unread = (res.data || []).filter(n => !n.estLue).length;
       setUnreadCount(unread);
     } catch (error) {
-      console.error('Erreur chargement notifications:', error);
+      console.error('Erreur:', error);
     }
   };
 
@@ -33,129 +40,91 @@ function NotificationPopup() {
     }
   };
 
-  const markAllAsRead = async () => {
-    for (const notif of notifications) {
-      if (!notif.estLue) {
-        await api.put(`/notifications/${notif._id}/lire`);
-      }
-    }
-    loadNotifications();
-  };
-
-  const getTypeIcon = (type) => {
-    switch(type) {
-      case 'succes': return <Icon name="check" size={18} color="#10b981" />;
-      case 'erreur': return <Icon name="exclamation" size={18} color="#ef4444" />;
-      case 'info': return <Icon name="comment_info" size={18} color="#3b82f6" />;
-      default: return <Icon name="notification" size={18} color="#667eea" />;
+  const styles = {
+    container: { position: 'relative', display: 'inline-block' },
+    bellBtn: {
+      background: darkMode ? '#334155' : '#f1f5f9',
+      border: 'none',
+      cursor: 'pointer',
+      position: 'relative',
+      padding: '8px 12px',
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '14px',
+      fontWeight: '500',
+      color: darkMode ? '#f1f5f9' : '#475569'
+    },
+    badge: {
+      position: 'absolute',
+      top: '-5px',
+      right: '-5px',
+      background: '#ef4444',
+      color: 'white',
+      borderRadius: '50%',
+      padding: '2px 6px',
+      fontSize: '10px',
+      fontWeight: 'bold'
+    },
+    panel: {
+      position: 'absolute',
+      top: '45px',
+      right: '0',
+      width: '320px',
+      maxHeight: '400px',
+      background: darkMode ? '#1e293b' : 'white',
+      borderRadius: '15px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+      zIndex: 1001,
+      overflow: 'hidden',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+    },
+    panelHeader: {
+      padding: '12px 15px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      background: darkMode ? '#0f172a' : '#f7fafc',
+      fontWeight: 'bold',
+      color: darkMode ? '#f1f5f9' : '#1e293b'
+    },
+    notificationList: {
+      maxHeight: '350px',
+      overflowY: 'auto'
+    },
+    notificationItem: (isRead) => ({
+      padding: '12px 15px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      cursor: 'pointer',
+      background: isRead ? (darkMode ? '#1e293b' : 'white') : (darkMode ? '#334155' : '#e0e7ff'),
+      color: darkMode ? '#cbd5e1' : '#333'
+    }),
+    emptyState: {
+      padding: '30px',
+      textAlign: 'center',
+      color: darkMode ? '#94a3b8' : '#999'
     }
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setShow(!show)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          position: 'relative',
-          padding: '8px',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <Icon name="notification_bell_ranging" size={24} color="#667eea" />
-        {unreadCount > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: '0',
-            right: '0',
-            background: '#ef4444',
-            color: 'white',
-            borderRadius: '50%',
-            padding: '2px 6px',
-            fontSize: '12px',
-            minWidth: '18px'
-          }}>
-            {unreadCount}
-          </span>
-        )}
+    <div style={styles.container}>
+      <button onClick={() => setShow(!show)} style={styles.bellBtn}>
+        🔔
+        {unreadCount > 0 && <span style={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+        <span>Notif</span>
       </button>
 
       {show && (
-        <div style={{
-          position: 'absolute',
-          top: '50px',
-          right: '0',
-          width: '350px',
-          maxHeight: '400px',
-          background: 'white',
-          borderRadius: '15px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-          zIndex: 1000,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <div style={{
-            padding: '15px',
-            background: '#667eea',
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Icon name="notification_bell_ranging" size={18} color="white" />
-              Notifications
-            </h4>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: 'none',
-                  color: 'white',
-                  padding: '5px 10px',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
-              >
-                Tout marquer comme lu
-              </button>
-            )}
-          </div>
-
-          <div style={{ overflowY: 'auto', maxHeight: '350px' }}>
+        <div style={styles.panel}>
+          <div style={styles.panelHeader}>🔔 Notifications ({unreadCount} non lues)</div>
+          <div style={styles.notificationList}>
             {notifications.length === 0 ? (
-              <div style={{ padding: '30px', textAlign: 'center', color: '#666' }}>
-                <Icon name="no_notification" size={32} color="#ccc" />
-                <p>Aucune notification</p>
-              </div>
+              <div style={styles.emptyState}>Aucune notification</div>
             ) : (
               notifications.map(notif => (
-                <div
-                  key={notif._id}
-                  onClick={() => markAsRead(notif._id)}
-                  style={{
-                    padding: '12px 15px',
-                    borderBottom: '1px solid #eee',
-                    cursor: 'pointer',
-                    background: notif.estLue ? 'white' : '#f0f4ff',
-                    transition: 'background 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                    <div style={{ marginTop: '2px' }}>{getTypeIcon(notif.type)}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{notif.titre}</div>
-                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>{notif.message}</div>
-                      <div style={{ fontSize: '10px', color: '#999' }}>{new Date(notif.createdAt).toLocaleString()}</div>
-                    </div>
-                    {!notif.estLue && <div style={{ width: '8px', height: '8px', background: '#667eea', borderRadius: '50%' }} />}
-                  </div>
+                <div key={notif._id} style={styles.notificationItem(notif.estLue)} onClick={() => markAsRead(notif._id)}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{notif.titre}</div>
+                  <div style={{ fontSize: '12px' }}>{notif.message}</div>
+                  <div style={{ fontSize: '10px', marginTop: '5px', opacity: 0.7 }}>{new Date(notif.createdAt).toLocaleString()}</div>
                 </div>
               ))
             )}

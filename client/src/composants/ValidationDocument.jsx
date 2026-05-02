@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import Icon from './Icon';  // ✅ AJOUTE CETTE LIGNE
+import Icon from './Icon';
+import { iconColors } from '../styles/iconColors';
 
-function ValidationDocument() {
+function ValidationDocument({ onValidate }) {
   const [soumissions, setSoumissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState({});
@@ -12,11 +13,12 @@ function ValidationDocument() {
   }, []);
 
   const loadSoumissions = async () => {
+    setLoading(true);
     try {
       const res = await api.get('/etapes/soumissions');
-      setSoumissions(res.data);
+      setSoumissions(res.data || []);
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur chargement soumissions:', error);
     } finally {
       setLoading(false);
     }
@@ -26,86 +28,219 @@ function ValidationDocument() {
     const commentaire = feedback[id] || '';
 
     if (!estValide && !commentaire) {
-      alert('Veuillez ajouter un commentaire pour expliquer le refus');
+      alert('❌ Veuillez ajouter un commentaire pour expliquer le refus');
       return;
     }
 
     try {
       if (estValide) {
         await api.post(`/etapes/valider/${id}`, { feedback: commentaire });
-        alert(' Document validé');
+        alert('✅ Document validé');
       } else {
         await api.post(`/etapes/refuser/${id}`, { feedback: commentaire });
-        alert(' Document refusé');
+        alert('❌ Document refusé');
       }
       loadSoumissions();
+      if (onValidate) onValidate();
       setFeedback({ ...feedback, [id]: '' });
     } catch (error) {
+      console.error('Erreur validation:', error);
       alert('Erreur: ' + (error.response?.data?.message || error.message));
     }
   };
 
-  if (loading) return <div>Chargement...</div>;
+  const styles = {
+    container: {
+      background: 'white',
+      borderRadius: '20px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+    },
+    title: {
+      fontSize: '20px',
+      fontWeight: 'bold',
+      marginBottom: '20px',
+      color: iconColors.black,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      borderLeft: `4px solid ${iconColors.primary}`,
+      paddingLeft: '16px'
+    },
+    soumissionCard: {
+      border: '1px solid #e2e8f0',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '16px',
+      transition: 'box-shadow 0.2s'
+    },
+    soumissionHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '12px',
+      flexWrap: 'wrap',
+      gap: '10px'
+    },
+    soumissionTitle: {
+      fontSize: '16px',
+      fontWeight: 'bold',
+      color: iconColors.black
+    },
+    soumissionMeta: {
+      fontSize: '12px',
+      color: iconColors.gray,
+      marginTop: '4px'
+    },
+    commentairePorteur: {
+      fontSize: '13px',
+      marginTop: '10px',
+      padding: '10px',
+      background: '#f8fafc',
+      borderRadius: '10px',
+      color: iconColors.gray
+    },
+    documentLink: {
+      marginTop: '8px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      color: iconColors.primary,
+      textDecoration: 'none',
+      fontSize: '13px'
+    },
+    textarea: {
+      width: '100%',
+      padding: '12px',
+      borderRadius: '12px',
+      border: '1px solid #e2e8f0',
+      marginBottom: '12px',
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      resize: 'vertical'
+    },
+    buttonGroup: {
+      display: 'flex',
+      gap: '12px'
+    },
+    btnValid: {
+      background: '#10b981',
+      color: 'white',
+      border: 'none',
+      padding: '10px 20px',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontWeight: '500',
+      transition: 'transform 0.2s'
+    },
+    btnRefuse: {
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      padding: '10px 20px',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontWeight: '500',
+      transition: 'transform 0.2s'
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '48px',
+      color: iconColors.grayLight
+    },
+    loadingState: {
+      textAlign: 'center',
+      padding: '48px',
+      color: iconColors.gray
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.loadingState}>
+          <Icon name="pending" size={32} color={iconColors.grayLight} />
+          <p>Chargement des soumissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ background: 'white', borderRadius: '15px', padding: '20px', marginBottom: '20px' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#667eea' }}>
-        <Icon name="document" size={22} color="#667eea" />
+    <div style={styles.container}>
+      <div style={styles.title}>
+        <Icon name="document" size={22} color={iconColors.primary} />
         Documents à valider
-      </h3>
+      </div>
+
       {soumissions.length === 0 ? (
-        <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-          <Icon name="no_notification" size={24} color="#ccc" />
-          <br />Aucune soumission en attente
-        </p>
+        <div style={styles.emptyState}>
+          <Icon name="no_notification" size={48} color={iconColors.grayLight} />
+          <p>Aucune soumission en attente</p>
+        </div>
       ) : (
-        soumissions.map(s => (
-          <div key={s._id} style={{ border: '1px solid #ddd', borderRadius: '10px', padding: '15px', marginBottom: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+        soumissions.map((s) => (
+          <div key={s._id} style={styles.soumissionCard}>
+            <div style={styles.soumissionHeader}>
               <div>
-                <strong>{s.titre}</strong>
-                <div style={{ fontSize: '12px', color: '#666' }}>
+                <div style={styles.soumissionTitle}>{s.titre}</div>
+                <div style={styles.soumissionMeta}>
                   Porteur: {s.porteurId?.firstName} {s.porteurId?.lastName}
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  Soumis le: {new Date(s.dateSoumission).toLocaleDateString()}
+                <div style={styles.soumissionMeta}>
+                  📅 Soumis le: {new Date(s.dateSoumission).toLocaleDateString('fr-FR')}
                 </div>
                 {s.commentairePorteur && (
-                  <div style={{ fontSize: '12px', marginTop: '5px', background: '#f0f0f0', padding: '8px', borderRadius: '5px' }}>
-                    <strong>Commentaire du porteur:</strong> {s.commentairePorteur}
+                  <div style={styles.commentairePorteur}>
+                    <strong>💬 Commentaire du porteur:</strong><br />
+                    {s.commentairePorteur}
                   </div>
                 )}
                 {s.documentUrl && (
-                  <div style={{ marginTop: '5px' }}>
-                    <a href={`http://localhost:5001/${s.documentUrl}`} target="_blank" rel="noopener noreferrer" style={{ color: '#667eea' }}>
-                      <Icon name="file" size={14} color="#667eea" /> Voir le document
-                    </a>
-                  </div>
+                  <a 
+                    href={`http://localhost:5001/${s.documentUrl}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={styles.documentLink}
+                  >
+                    <Icon name="file" size={14} color={iconColors.primary} />
+                    📄 Voir le document
+                  </a>
                 )}
               </div>
             </div>
 
-            <div style={{ marginTop: '10px' }}>
+            <div style={{ marginTop: '16px' }}>
               <textarea
-                placeholder="Feedback pour le porteur..."
+                placeholder="✏️ Feedback pour le porteur (obligatoire pour un refus)..."
                 value={feedback[s._id] || ''}
                 onChange={(e) => setFeedback({ ...feedback, [s._id]: e.target.value })}
-                style={{ width: '100%', padding: '8px', borderRadius: '5px', border: '1px solid #ddd', marginBottom: '10px' }}
-                rows="2"
+                style={styles.textarea}
+                rows="3"
               />
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.buttonGroup}>
                 <button 
                   onClick={() => handleValidation(s._id, true)} 
-                  style={{ background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                  style={styles.btnValid}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  <Icon name="validate" size={14} color="white" />
+                  <Icon name="check_st" size={16} color="white" />
                   Valider
                 </button>
                 <button 
                   onClick={() => handleValidation(s._id, false)} 
-                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                  style={styles.btnRefuse}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  <Icon name="reject" size={14} color="white" />
+                  <Icon name="exclamation_point" size={16} color="white" />
                   Refuser
                 </button>
               </div>

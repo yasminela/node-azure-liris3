@@ -1,16 +1,123 @@
 import express from 'express';
 import { auth, isAdmin } from '../middlewares/authentification.js';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import Utilisateur from '../models/Utilisateur.js';
 
 const router = express.Router();
 
-// Tous les utilisateurs (admin)
+// Configuration multer pour les avatars
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = './telechargements/avatars';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'avatar-' + req.user.id + '-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'));
+    }
+  }
+});
+
+// Récupérer tous les utilisateurs (admin)
 router.get('/', auth, isAdmin, async (req, res) => {
   try {
     const users = await Utilisateur.find().select('-password');
     res.json(users);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Récupérer son propre profil
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await Utilisateur.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Mettre à jour son propre profil
+router.put('/me', auth, async (req, res) => {
+  try {
+    const { firstName, lastName, email, telephone, faculte, residence } = req.body;
+    const user = await Utilisateur.findByIdAndUpdate(
+      req.user.id,
+      { firstName, lastName, email, telephone, faculte, residence },
+      { new: true }
+    ).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// UPLOAD AVATAR - Route corrigée
+router.put('/avatar', auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Aucun fichier uploadé' });
+    }
+    
+    // Supprimer l'ancien avatar s'il existe
+    const oldUser = await Utilisateur.findById(req.user.id);
+    if (oldUser.avatar) {
+      const oldPath = path.join('.', oldUser.avatar);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+    
+    const avatarUrl = `/telechargements/avatars/${req.file.filename}`;
+    
+    const user = await Utilisateur.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatarUrl },
+      { new: true }
+    ).select('-password');
+    
+    res.json({ message: 'Avatar mis à jour', avatar: avatarUrl, user });
+  } catch (error) {
+    console.error('Erreur upload avatar:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// SUPPRIMER AVATAR - Route corrigée
+router.delete('/avatar', auth, async (req, res) => {
+  try {
+    const user = await Utilisateur.findById(req.user.id);
+    if (user.avatar) {
+      const oldPath = path.join('.', user.avatar);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+    
+    await Utilisateur.findByIdAndUpdate(req.user.id, { avatar: null });
+    res.json({ message: 'Avatar supprimé' });
+  } catch (error) {
+    console.error('Erreur suppression avatar:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -27,48 +134,36 @@ router.post('/', auth, isAdmin, async (req, res) => {
     
     const hash = await bcrypt.hash(password, 10);
     const user = new Utilisateur({
-      firstName,
-      lastName,
-      email,
-      password: hash,
-      role: 'porteur',
-      telephone,
-      faculte,
-      residence,
-      nomProjet
+      firstName, lastName, email, password: hash, role: 'porteur',
+      telephone, faculte, residence, nomProjet
     });
     
     await user.save();
-    res.status(201).json({ message: 'Porteur créé', user: { id: user._id, firstName, lastName, email, role: 'porteur' } });
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.status(201).json({ message: 'Porteur créé', user: userResponse });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Modifier un porteur (admin)
-// Modifier un porteur (admin)
 router.put('/:id', auth, isAdmin, async (req, res) => {
   try {
     const { firstName, lastName, email, telephone, faculte, residence, nomProjet } = req.body;
-    
     const user = await Utilisateur.findByIdAndUpdate(
       req.params.id,
       { firstName, lastName, email, telephone, faculte, residence, nomProjet },
       { new: true }
     ).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
-    }
-    
     res.json({ message: 'Porteur modifié', user });
   } catch (error) {
-    console.error('Erreur modification:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Supprimer un utilisateur
+// Supprimer un utilisateur (admin)
 router.delete('/:id', auth, isAdmin, async (req, res) => {
   try {
     await Utilisateur.findByIdAndDelete(req.params.id);

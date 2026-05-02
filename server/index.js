@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import cron from 'node-cron';
 
 dotenv.config();
 
@@ -24,7 +26,7 @@ app.options('*', cors());
 app.use(express.json());
 app.use('/telechargements', express.static(path.join(__dirname, 'telechargements')));
 
-// Routes
+// Import des routes
 import authRoutes from './routes/authentification.js';
 import utilisateurRoutes from './routes/utilisateurs.js';
 import projetRoutes from './routes/projets.js';

@@ -1,30 +1,33 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 import Icon from './Icon';
 import { iconColors } from '../styles/iconColors';
 
 function PiedDePage() {
+  const { darkMode } = useTheme();
   const currentYear = new Date().getFullYear();
 
   const styles = {
     container: {
       marginTop: '40px',
       padding: '30px 24px 20px',
-      background: `linear-gradient(135deg, ${iconColors.grayBg} 0%, #f1f5f9 100%)`,
+      background: darkMode ? '#1e293b' : '#f8fafc',
       borderRadius: '20px',
-      borderTop: `1px solid ${iconColors.primary}20`
+      borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     partnersSection: {
       marginBottom: '24px',
       paddingBottom: '24px',
-      borderBottom: '1px solid #e2e8f0'
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     partnersTitle: {
       fontSize: '14px',
       fontWeight: 'bold',
-      color: iconColors.gray,
+      color: darkMode ? '#94a3b8' : '#64748b',
       textTransform: 'uppercase',
       letterSpacing: '1px',
       marginBottom: '20px',
+      textAlign: 'center',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -35,31 +38,30 @@ function PiedDePage() {
       flexDirection: 'column',
       alignItems: 'center',
       gap: '12px',
-      padding: '20px 32px',
-      background: iconColors.white,
+      padding: '24px',
+      background: darkMode ? '#0f172a' : 'white',
       borderRadius: '20px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
-      transition: 'transform 0.2s, box-shadow 0.2s',
-      cursor: 'pointer',
-      maxWidth: '280px',
+      boxShadow: darkMode ? '0 4px 15px rgba(0,0,0,0.2)' : '0 4px 15px rgba(0,0,0,0.05)',
+      maxWidth: '320px',
       margin: '0 auto'
     },
     partnerLogo: {
-      width: '80px',
-      height: '80px',
+      width: '100px',
+      height: '100px',
       objectFit: 'contain',
-      borderRadius: '12px'
+      filter: darkMode ? 'brightness(1.1)' : 'none'
     },
     partnerName: {
       fontWeight: 'bold',
       fontSize: '20px',
-      color: iconColors.black,
+      color: darkMode ? '#f1f5f9' : '#1e293b',
       marginTop: '8px'
     },
     partnerRole: {
       fontSize: '13px',
-      color: iconColors.gray,
-      textAlign: 'center'
+      color: darkMode ? '#94a3b8' : '#64748b',
+      textAlign: 'center',
+      lineHeight: '1.5'
     },
     socialLinks: {
       display: 'flex',
@@ -69,14 +71,14 @@ function PiedDePage() {
     socialLink: {
       display: 'flex',
       alignItems: 'center',
-      gap: '6px',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      background: '#f1f5f9',
-      color: iconColors.gray,
+      gap: '8px',
+      padding: '8px 16px',
+      borderRadius: '30px',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      color: darkMode ? '#cbd5e1' : '#64748b',
       textDecoration: 'none',
-      fontSize: '12px',
-      transition: 'all 0.2s'
+      fontSize: '13px',
+      transition: 'all 0.2s ease'
     },
     footerBottom: {
       display: 'flex',
@@ -85,7 +87,7 @@ function PiedDePage() {
       flexWrap: 'wrap',
       gap: '16px',
       fontSize: '12px',
-      color: iconColors.grayLight
+      color: darkMode ? '#94a3b8' : '#64748b'
     },
     copyright: {
       display: 'flex',
@@ -102,18 +104,16 @@ function PiedDePage() {
       display: 'flex',
       alignItems: 'center',
       gap: '6px',
-      color: iconColors.grayLight,
-      textDecoration: 'none',
-      transition: 'color 0.2s'
+      color: darkMode ? '#94a3b8' : '#64748b',
+      textDecoration: 'none'
     },
     links: {
       display: 'flex',
       gap: '20px'
     },
     link: {
-      color: iconColors.grayLight,
+      color: darkMode ? '#94a3b8' : '#64748b',
       textDecoration: 'none',
-      transition: 'color 0.2s',
       cursor: 'pointer'
     },
     heartIcon: {
@@ -127,63 +127,41 @@ function PiedDePage() {
       {/* Section Partenaire S2T */}
       <div style={styles.partnersSection}>
         <div style={styles.partnersTitle}>
-          <Icon name="handshake" size={16} color={iconColors.gray} />
-          PARTENAIRE OFFICIEL
-          <Icon name="handshake" size={16} color={iconColors.gray} />
+          🤝 PARTENAIRE OFFICIEL
         </div>
 
         <div style={styles.partnerCard}>
-          {/* Logo S2T */}
           <img 
             src="/S2T_logo.png" 
             alt="S2T Tunisie" 
             style={styles.partnerLogo}
             onError={(e) => {
               e.target.style.display = 'none';
-              console.error('Logo S2T non trouvé');
+              console.error('Logo non trouvé');
             }}
           />
-          
           <div style={styles.partnerName}>S2T Tunisie</div>
           <div style={styles.partnerRole}>
-            Pépinière d'entreprises - Accompagnement des startups innovantes
+            Pépinière d'entreprises<br />
+            Accompagnement des startups innovantes
           </div>
           
-          {/* Réseaux sociaux S2T */}
           <div style={styles.socialLinks}>
             <a 
-              href="https://www.linkedin.com/company/s2ttunisia/posts/?feedView=all" 
+              href="https://www.linkedin.com/company/s2ttunisia/" 
               target="_blank" 
               rel="noopener noreferrer"
               style={styles.socialLink}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#0077b5';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#f1f5f9';
-                e.currentTarget.style.color = iconColors.gray;
-              }}
             >
-              <Icon name="linkedin" size={14} color="#0077b5" />
-              LinkedIn
+              🔗 LinkedIn
             </a>
             <a 
               href="https://www.facebook.com/s2t.tunisia/" 
               target="_blank" 
               rel="noopener noreferrer"
               style={styles.socialLink}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#1877f2';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#f1f5f9';
-                e.currentTarget.style.color = iconColors.gray;
-              }}
             >
-              <Icon name="facebook" size={14} color="#1877f2" />
-              Facebook
+                              Facebook
             </a>
           </div>
         </div>
@@ -192,41 +170,18 @@ function PiedDePage() {
       {/* Footer Bas */}
       <div style={styles.footerBottom}>
         <div style={styles.copyright}>
-          <Icon name="copyright" size={12} color={iconColors.grayLight} />
-          <span>{currentYear} Incubiny. Tous droits réservés.</span>
+          © {currentYear} Incubiny. Tous droits réservés.
         </div>
 
         <div style={styles.developerInfo}>
           <div style={styles.devLink}>
-            <Icon name="code" size={12} color={iconColors.grayLight} />
-            <span>Développé par Yasmine La</span>
-            <Icon name="heart" size={10} style={styles.heartIcon} />
+            💻 Développé par Yasmine La
+            <span style={styles.heartIcon}>❤️</span>
           </div>
           <div style={styles.links}>
-            <a 
-              href="#" 
-              style={styles.link} 
-              onMouseEnter={(e) => e.currentTarget.style.color = iconColors.primary} 
-              onMouseLeave={(e) => e.currentTarget.style.color = iconColors.grayLight}
-            >
-              Conditions d'utilisation
-            </a>
-            <a 
-              href="#" 
-              style={styles.link} 
-              onMouseEnter={(e) => e.currentTarget.style.color = iconColors.primary} 
-              onMouseLeave={(e) => e.currentTarget.style.color = iconColors.grayLight}
-            >
-              Politique de confidentialité
-            </a>
-            <a 
-              href="#" 
-              style={styles.link} 
-              onMouseEnter={(e) => e.currentTarget.style.color = iconColors.primary} 
-              onMouseLeave={(e) => e.currentTarget.style.color = iconColors.grayLight}
-            >
-              Contact
-            </a>
+            <a href="#" style={styles.link}>Conditions</a>
+            <a href="#" style={styles.link}>Confidentialité</a>
+            <a href="#" style={styles.link}>Contact</a>
           </div>
         </div>
       </div>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import Icon from './Icon';
 import { iconColors } from '../styles/iconColors';
+import { useTheme } from '../context/ThemeContext';
 
 function SuiviEtapes() {
+  const { darkMode } = useTheme(); 
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEtape, setSelectedEtape] = useState(null);
@@ -104,28 +106,21 @@ function SuiviEtapes() {
     },
     table: { width: '100%', borderCollapse: 'collapse', overflowX: 'auto' },
     th: {
-      padding: '14px',
-      textAlign: 'left',
-      background: iconColors.grayBg,
-      color: iconColors.gray,
-      fontWeight: '600',
-      fontSize: '14px',
-      borderBottom: `2px solid #e2e8f0`
-    },
-    td: { padding: '14px', borderBottom: '1px solid #e2e8f0', fontSize: '14px', verticalAlign: 'middle' },
-    submitBtn: {
-      background: iconColors.primary,
-      color: iconColors.white,
-      border: 'none',
-      padding: '8px 16px',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      fontSize: '13px',
-      fontWeight: '500'
-    },
+  padding: '14px',
+  textAlign: 'left',
+  background: darkMode ? '#334155' : '#f8fafc',
+  color: 'var(--text-secondary)',
+  fontWeight: '600',
+  fontSize: '14px',
+  borderBottom: `2px solid #e2e8f0`,
+},
+    td: {
+  padding: '14px',
+  borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+  fontSize: '14px',
+  verticalAlign: 'middle',
+  color: 'var(--text-primary)',
+},
     disabledBtn: {
       background: '#cbd5e1',
       color: iconColors.gray,
