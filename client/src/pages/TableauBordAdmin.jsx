@@ -15,6 +15,7 @@ import AvatarManager from '../composants/AvatarManager';
 import GlassCard from '../composants/ui/GlassCard';
 import ToastNotification from '../composants/ui/ToastNotification';
 import PiedDePage from '../composants/PiedDePage';
+import AdminAnalysesIA from '../composants/AdminAnalysesIA';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
@@ -579,6 +580,8 @@ function TableauBordAdmin({ user, onLogout }) {
             )}
           </div>
         )}
+
+{activeTab === 'analyses' && <AdminAnalysesIA />}
 
         {/* Soumissions Content */}
         {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
