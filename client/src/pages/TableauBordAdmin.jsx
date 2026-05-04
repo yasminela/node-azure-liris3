@@ -10,15 +10,14 @@ import ValidationDocument from '../composants/ValidationDocument';
 import AssignerEtapes from '../composants/AssignerEtapes';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import ScoresPorteurs from '../composants/ScoresPorteurs';
-import GestionAnalysesIA from '../composants/GestionAnalysesIA';
+import AdminAnalysesIA from '../composants/AdminAnalysesIA';
 import AvatarManager from '../composants/AvatarManager';
 import GlassCard from '../composants/ui/GlassCard';
 import ToastNotification from '../composants/ui/ToastNotification';
 import PiedDePage from '../composants/PiedDePage';
-import AdminAnalysesIA from '../composants/AdminAnalysesIA';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
+  faChartLine, faUsers, faBuilding, faFileAlt, faEye,
   faUserPlus, faPaperPlane, faTasks, faUserCircle, 
   faExclamationTriangle, faEdit, faTrash, faCheck, faTimes,
   faTachometerAlt
@@ -42,14 +41,9 @@ function TableauBordAdmin({ user, onLogout }) {
   const colors = {
     primary: '#9333ea',
     primaryLight: '#a855f7',
-    primaryDark: '#7e22ce',
     secondary: '#ec4899',
-    secondaryLight: '#f472b6',
-    accent: '#06b6d4',
     gradient1: 'linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #06b6d4 100%)',
-    gradient2: 'linear-gradient(135deg, #7e22ce 0%, #db2777 100%)',
-    gradientBgLight: 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.08) 0%, rgba(236, 72, 153, 0.05) 50%, rgba(6, 182, 212, 0.03) 100%)',
-    gradientBgDark: 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.15) 0%, rgba(236, 72, 153, 0.08) 50%, rgba(6, 182, 212, 0.05) 100%)'
+    gradient2: 'linear-gradient(135deg, #7e22ce 0%, #db2777 100%)'
   };
 
   useEffect(() => {
@@ -114,18 +108,6 @@ function TableauBordAdmin({ user, onLogout }) {
     }
   };
 
-  const handleDeleteProjet = async (id) => {
-    if (window.confirm('Supprimer ce projet ?')) {
-      try {
-        await api.delete(`/projets/${id}`);
-        await loadAllData();
-        showToastMessage('success', '✅ Projet supprimé');
-      } catch (error) {
-        showToastMessage('error', '❌ Erreur lors de la suppression');
-      }
-    }
-  };
-
   const handleValidateProjet = async (id, statut, feedback) => {
     try {
       if (statut === 'valide') {
@@ -165,25 +147,6 @@ function TableauBordAdmin({ user, onLogout }) {
       position: 'relative',
       zIndex: 1
     },
-    backgroundDecoration: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: darkMode ? '#0f172a' : '#f8fafc',
-      zIndex: 0,
-      overflow: 'hidden'
-    },
-    gradientOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: darkMode ? colors.gradientBgDark : colors.gradientBgLight,
-      zIndex: 1
-    },
     profileCard: { 
       display: 'flex', 
       alignItems: 'center', 
@@ -194,9 +157,7 @@ function TableauBordAdmin({ user, onLogout }) {
       borderRadius: '24px',
       padding: '24px',
       marginBottom: '24px',
-      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
-      position: 'relative',
-      zIndex: 2
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`
     },
     profileInfo: { flex: 1 },
     profileName: { 
@@ -224,9 +185,7 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'grid', 
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
       gap: 'clamp(16px, 3vw, 24px)', 
-      marginBottom: '32px',
-      position: 'relative',
-      zIndex: 2
+      marginBottom: '32px'
     },
     statCard: {
       padding: 'clamp(16px, 4vw, 24px)',
@@ -258,9 +217,7 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'flex', 
       gap: '16px', 
       marginBottom: '30px', 
-      flexWrap: 'wrap',
-      position: 'relative',
-      zIndex: 2
+      flexWrap: 'wrap'
     },
     actionBtn: { 
       padding: 'clamp(10px, 2vw, 12px) clamp(16px, 4vw, 24px)', 
@@ -284,9 +241,7 @@ function TableauBordAdmin({ user, onLogout }) {
       borderRadius: '20px', 
       padding: 'clamp(16px, 4vw, 24px)', 
       marginBottom: '24px', 
-      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
-      position: 'relative',
-      zIndex: 2
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`
     },
     sectionTitle: { 
       fontSize: 'clamp(18px, 4vw, 20px)', 
@@ -326,9 +281,7 @@ function TableauBordAdmin({ user, onLogout }) {
       marginBottom: '24px', 
       paddingBottom: '12px', 
       flexWrap: 'wrap',
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-      position: 'relative',
-      zIndex: 2
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     tab: (active) => ({
       padding: '10px 20px',
@@ -347,9 +300,7 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
       gap: '20px',
-      marginBottom: '30px',
-      position: 'relative',
-      zIndex: 2
+      marginBottom: '30px'
     },
     programCard: {
       background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
@@ -390,17 +341,30 @@ function TableauBordAdmin({ user, onLogout }) {
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
-          .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
-          .btn-shine:hover::before { left: 100%; }
-          .btn-shine:hover { transform: translateY(-2px); }
+          .btn-shine {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+          }
+          .btn-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+          }
+          .btn-shine:hover::before {
+            left: 100%;
+          }
+          .btn-shine:hover {
+            transform: translateY(-2px);
+          }
           .stat-card:hover, .program-card:hover { transform: translateY(-5px); }
         `
       }} />
-
-      <div style={styles.backgroundDecoration}>
-        <div style={styles.gradientOverlay} />
-      </div>
 
       <Navbar user={currentUser} onLogout={onLogout} />
       
@@ -432,7 +396,7 @@ function TableauBordAdmin({ user, onLogout }) {
 
         <EarlyStageTimeline />
 
-        {/* Tabs */}
+        {/* Onglets */}
         <div style={styles.tabsContainer}>
           <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faTachometerAlt} /> Tableau de bord
@@ -446,7 +410,6 @@ function TableauBordAdmin({ user, onLogout }) {
           <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
             <FontAwesomeIcon icon={faFileAlt} /> Soumissions ({stats.soumissions})
           </button>
-          {/* ANALYSES IA - ONGLET AJOUTÉ */}
           <button className="btn-shine" style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}>
             <FontAwesomeIcon icon={faEye} /> Analyses IA
           </button>
@@ -508,15 +471,7 @@ function TableauBordAdmin({ user, onLogout }) {
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Nom</th>
-                      <th style={styles.th}>Email</th>
-                      <th style={styles.th}>Téléphone</th>
-                      <th style={styles.th}>Projet</th>
-                      <th style={styles.th}>Actions</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th style={styles.th}>Nom</th><th style={styles.th}>Email</th><th style={styles.th}>Téléphone</th><th style={styles.th}>Projet</th><th style={styles.th}>Actions</th></tr></thead>
                   <tbody>
                     {porteurs.map(p => (
                       <tr key={p._id}>
@@ -550,14 +505,7 @@ function TableauBordAdmin({ user, onLogout }) {
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Projet</th>
-                      <th style={styles.th}>Porteur</th>
-                      <th style={styles.th}>Statut</th>
-                      <th style={styles.th}>Actions</th>
-                    </tr>
-                  </thead>
+                  <thead><tr><th style={styles.th}>Projet</th><th style={styles.th}>Porteur</th><th style={styles.th}>Statut</th><th style={styles.th}>Actions</th></tr></thead>
                   <tbody>
                     {projets.filter(p => p.statut === 'en_attente').map(p => (
                       <tr key={p._id}>
@@ -581,13 +529,11 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
-{activeTab === 'analyses' && <AdminAnalysesIA />}
-
         {/* Soumissions Content */}
         {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
 
-        {/* ANALYSES IA Content - AJOUTÉ */}
-        {activeTab === 'analyses' && <GestionAnalysesIA />}
+        {/* ANALYSES IA Content - UNIQUEMENT POUR ADMIN */}
+        {activeTab === 'analyses' && <AdminAnalysesIA />}
 
         {/* Scores Content */}
         {activeTab === 'scores' && <ScoresPorteurs />}
