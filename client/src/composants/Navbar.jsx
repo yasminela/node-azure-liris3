@@ -13,17 +13,22 @@ import {
   faBars,
   faTimes,
   faChevronDown,
-  faChevronUp
+  faChevronUp,
+  faLanguage,        // ← AJOUTER CETTE LIGNE
+  faFlag
 } from '@fortawesome/free-solid-svg-icons';
 
 function Navbar({ user, onLogout }) {
   const { darkMode, toggleDarkMode } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [uploading, setUploading] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('fr');
   const profileMenuRef = useRef(null);
+  const languageMenuRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,6 +45,9 @@ function Navbar({ user, onLogout }) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setProfileMenuOpen(false);
       }
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target)) {
+        setLanguageMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -48,6 +56,7 @@ function Navbar({ user, onLogout }) {
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileMenuOpen(false);
+    setLanguageMenuOpen(false);
   }, [location]);
 
   const loadUserProfile = async () => {
@@ -128,6 +137,20 @@ function Navbar({ user, onLogout }) {
     }
   };
 
+  const changeLanguage = (lang) => {
+    setCurrentLanguage(lang);
+    localStorage.setItem('language', lang);
+    // Optionnel: changer la direction du texte pour l'arabe
+    if (lang === 'ar') {
+      document.documentElement.dir = 'rtl';
+    } else {
+      document.documentElement.dir = 'ltr';
+    }
+    setLanguageMenuOpen(false);
+    // Recharger la page pour appliquer les traductions
+    window.location.reload();
+  };
+
   const getInitials = () => {
     if (currentUser?.firstName && currentUser?.lastName) {
       return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();
@@ -192,6 +215,45 @@ function Navbar({ user, onLogout }) {
       fontSize: '16px',
       display: 'flex',
       alignItems: 'center'
+    },
+    languageBtn: {
+      background: 'none',
+      color: darkMode ? '#f1f5f9' : '#475569',
+      padding: '8px 12px',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      border: 'none',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      transition: 'all 0.3s ease'
+    },
+    languageMenu: {
+      position: 'absolute',
+      top: '50px',
+      right: '0',
+      width: '160px',
+      background: darkMode ? '#1e293b' : 'white',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+      zIndex: 100,
+      overflow: 'hidden',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+    },
+    languageMenuItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '10px 16px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      color: darkMode ? '#f1f5f9' : '#1e293b',
+      fontSize: '14px'
+    },
+    languageMenuActive: {
+      background: darkMode ? '#334155' : '#f1f5f9',
+      color: '#667eea'
     },
     profileContainer: { position: 'relative' },
     profileBtn: {
@@ -307,6 +369,13 @@ function Navbar({ user, onLogout }) {
   const avatarUrl = getAvatarUrl();
   const hasAvatar = !!avatarUrl;
 
+  // Options de langue
+  const languages = [
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'ar', label: 'العربية', flag: '🇸🇦' }
+  ];
+
   return (
     <>
       <nav style={styles.nav}>
@@ -317,6 +386,38 @@ function Navbar({ user, onLogout }) {
           </div>
 
           <div style={styles.desktopMenu}>
+            {/* Bouton Langue */}
+            <div style={{ position: 'relative' }} ref={languageMenuRef}>
+              <button 
+                className="btn-shine" 
+                style={styles.languageBtn} 
+                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+              >
+                <FontAwesomeIcon icon={faLanguage} />
+                <span>{languages.find(l => l.code === currentLanguage)?.flag || '🇫🇷'}</span>
+              </button>
+
+              {languageMenuOpen && (
+                <div style={styles.languageMenu}>
+                  {languages.map(lang => (
+                    <div
+                      key={lang.code}
+                      className="btn-shine"
+                      style={{
+                        ...styles.languageMenuItem,
+                        ...(currentLanguage === lang.code ? styles.languageMenuActive : {})
+                      }}
+                      onClick={() => changeLanguage(lang.code)}
+                    >
+                      <span style={{ fontSize: '18px' }}>{lang.flag}</span>
+                      <span>{lang.label}</span>
+                      {currentLanguage === lang.code && <span style={{ marginLeft: 'auto', color: '#667eea' }}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <NotificationPopup />
 
             <button className="btn-shine" onClick={toggleDarkMode} style={styles.themeBtn}>
@@ -393,6 +494,30 @@ function Navbar({ user, onLogout }) {
               <div>
                 <div style={{ fontWeight: 'bold' }}>{currentUser?.firstName} {currentUser?.lastName}</div>
                 <div style={{ fontSize: '11px', opacity: 0.7 }}>{currentUser?.email}</div>
+              </div>
+            </div>
+            
+            {/* Menu Langue dans mobile */}
+            <div style={{ ...styles.mobileMenuItem, display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'space-between' }}>
+              <span><FontAwesomeIcon icon={faLanguage} /> Langue</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {languages.map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => changeLanguage(lang.code)}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: currentLanguage === lang.code ? '#667eea' : 'transparent',
+                      color: currentLanguage === lang.code ? 'white' : 'inherit',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {lang.flag}
+                  </button>
+                ))}
               </div>
             </div>
             
