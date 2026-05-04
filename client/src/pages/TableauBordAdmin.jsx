@@ -17,10 +17,10 @@ import ToastNotification from '../composants/ui/ToastNotification';
 import PiedDePage from '../composants/PiedDePage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faChartLine, faUsers, faBuilding, faFileAlt, faEye,
+  faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
   faUserPlus, faPaperPlane, faTasks, faUserCircle, 
   faExclamationTriangle, faEdit, faTrash, faCheck, faTimes,
-  faTachometerAlt
+  faTachometerAlt, faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordAdmin({ user, onLogout }) {
@@ -137,6 +137,83 @@ function TableauBordAdmin({ user, onLogout }) {
       </span>
     );
   };
+
+  // Loader moderne
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: darkMode ? '#0f172a' : '#f8fafc' }}>
+        <Navbar user={currentUser} onLogout={onLogout} />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 'calc(100vh - 70px)',
+          gap: '24px'
+        }}>
+          {/* Logo animé */}
+          <div style={{
+            width: '80px',
+            height: '80px',
+            background: 'linear-gradient(135deg, #9333ea, #ec4899, #06b6d4)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <img src="/logo-incubiny.png" alt="Incubiny" style={{ width: '45px', height: '45px', filter: 'brightness(0) invert(1)' }} />
+          </div>
+          
+          {/* Spinner */}
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '3px solid rgba(147, 51, 234, 0.2)',
+            borderTop: '3px solid #9333ea',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          
+          {/* Message */}
+          <p style={{ color: darkMode ? '#94a3b8' : '#475569', fontSize: '14px' }}>
+            <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
+            Chargement de votre tableau de bord...
+          </p>
+          
+          {/* Barre de progression animée */}
+          <div style={{
+            width: '250px',
+            height: '3px',
+            background: darkMode ? '#334155' : '#e2e8f0',
+            borderRadius: '10px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '60%',
+              height: '100%',
+              background: 'linear-gradient(90deg, #9333ea, #ec4899, #06b6d4)',
+              animation: 'loading 1.5s ease-in-out infinite'
+            }} />
+          </div>
+        </div>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes spin { 100% { transform: rotate(360deg); } }
+            @keyframes pulse { 
+              0%, 100% { transform: scale(1); } 
+              50% { transform: scale(1.1); } 
+            }
+            @keyframes loading { 
+              0% { width: 0%; } 
+              50% { width: 80%; } 
+              100% { width: 100%; } 
+            }
+          `
+        }} />
+      </div>
+    );
+  }
 
   const styles = {
     container: { 
@@ -324,23 +401,13 @@ function TableauBordAdmin({ user, onLogout }) {
     }
   };
 
-  if (loading) {
-    return (
-      <div>
-        <Navbar user={currentUser} onLogout={onLogout} />
-        <div className="loading-container">
-          <div style={{ width: '48px', height: '48px', border: `3px solid ${colors.primary}20`, borderTop: `3px solid ${colors.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: darkMode ? '#94a3b8' : '#475569' }}>Chargement du tableau de bord...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ minHeight: '100vh', position: 'relative', background: darkMode ? '#0f172a' : '#f8fafc' }}>
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes loading { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
+          @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
           .btn-shine {
             position: relative;
             overflow: hidden;
@@ -532,7 +599,7 @@ function TableauBordAdmin({ user, onLogout }) {
         {/* Soumissions Content */}
         {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
 
-        {/* ANALYSES IA Content - UNIQUEMENT POUR ADMIN */}
+        {/* ANALYSES IA Content */}
         {activeTab === 'analyses' && <AdminAnalysesIA />}
 
         {/* Scores Content */}
