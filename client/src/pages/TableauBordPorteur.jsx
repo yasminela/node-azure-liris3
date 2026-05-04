@@ -69,36 +69,43 @@ function TableauBordPorteur({ user, onLogout }) {
     showToastMessage('success', 'Photo de profil mise à jour !');
   };
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [projetsRes, tachesRes, etapesRes] = await Promise.all([
-        api.get('/projets/mes-projets'),
-        api.get('/taches/mes-taches'),
-        api.get('/etapes/mes-etapes')
-      ]);
-      setProjets(projetsRes.data || []);
-      setTaches(tachesRes.data || []);
-      setEtapes(etapesRes.data || []);
+ const loadData = async () => {
+  setLoading(true);
+  try {
+    const [projetsRes, tachesRes, etapesRes] = await Promise.all([
+      api.get('/projets/mes-projets'),
+      api.get('/taches/mes-taches'),
+      api.get('/etapes/mes-etapes')
+    ]);
+    setProjets(projetsRes.data || []);
+    setTaches(tachesRes.data || []);
 
-      const etapesData = etapesRes.data || [];
-      const etapesRestantes = etapesData.filter(e => e.statut !== 'validee').length;
-      const totalEtapes = etapesData.length || 1;
-      const progression = Math.round(((totalEtapes - etapesRestantes) / totalEtapes) * 100);
+    const etapesData = etapesRes.data || [];
+    
+    // 📊 Calcul de la progression (0% au début)
+    const etapesValidees = etapesData.filter(e => e.statut === 'validee').length;
+    const totalEtapes = etapesData.length;
+    
+    // Progression = (étapes validées / total étapes) * 100
+    // Si aucune étape assignée, progression = 0
+    const progression = totalEtapes > 0 ? Math.round((etapesValidees / totalEtapes) * 100) : 0;
+    
+    // Étapes restantes à faire
+    const etapesRestantes = etapesData.filter(e => e.statut !== 'validee').length;
 
-      setStats({
-        projetsCount: projetsRes.data?.length || 0,
-        tachesCount: tachesRes.data?.filter(t => !t.estComplete).length || 0,
-        etapesCount: etapesRestantes,
-        progression: progression
-      });
-    } catch (error) {
-      console.error('Erreur chargement:', error);
-      showToastMessage('error', 'Erreur lors du chargement des données');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setStats({
+      projetsCount: projetsRes.data?.length || 0,
+      tachesCount: tachesRes.data?.filter(t => !t.estComplete).length || 0,
+      etapesCount: etapesRestantes,
+      progression: progression  // ← Commence à 0%
+    });
+  } catch (error) {
+    console.error('Erreur chargement:', error);
+    showToastMessage('error', 'Erreur lors du chargement des données');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const loadSoumissions = async () => {
     try {
@@ -535,12 +542,14 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={styles.progressionFill} />
               </div>
               <div style={styles.progressionText}>
-                {stats.progression === 0 
-                  ? '🚀 Commencez votre parcours en soumettant votre premier document !' 
-                  : stats.progression === 100 
-                    ? '🎉 Félicitations ! Vous avez terminé toutes les étapes du programme !'
-                    : '🎯 Continuez vos efforts, vous progressez bien !'}
-              </div>
+               {stats.progression === 0 ? (
+               '🚀 Commencez votre parcours en soumettant votre premier document !'
+                   ) : stats.progression === 100 ? (
+              '🎉 Félicitations ! Vous avez terminé toutes les étapes du programme !'
+              ) : (
+             `📈 Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`
+                 )}
+            </div>
             </div>
 
             <Calendrier />

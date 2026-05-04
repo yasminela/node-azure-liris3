@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileAlt, faCheck, faTimes, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faFileAlt, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 function ValidationDocument({ onValidate }) {
   const { darkMode } = useTheme();
   const [soumissions, setSoumissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState({});
+  const [validating, setValidating] = useState({});
 
   useEffect(() => {
     loadSoumissions();
@@ -28,24 +29,31 @@ function ValidationDocument({ onValidate }) {
 
   const handleValidation = async (id, estValide) => {
     const commentaire = feedback[id] || '';
+
     if (!estValide && !commentaire) {
-      alert('Veuillez ajouter un commentaire');
+      alert('❌ Veuillez ajouter un commentaire pour expliquer le refus');
       return;
     }
 
+    setValidating(prev => ({ ...prev, [id]: true }));
+
     try {
       if (estValide) {
-        await api.post(`/etapes/valider/${id}`, { feedback: commentaire });
+        await api.put(`/etapes/valider/${id}`, { commentaire });
         alert('✅ Document validé');
       } else {
-        await api.post(`/etapes/refuser/${id}`, { feedback: commentaire });
+        await api.put(`/etapes/refuser/${id}`, { commentaire });
         alert('❌ Document refusé');
       }
-      loadSoumissions();
+      
+      await loadSoumissions();
       if (onValidate) onValidate();
       setFeedback({ ...feedback, [id]: '' });
     } catch (error) {
+      console.error('Erreur validation:', error);
       alert('Erreur: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setValidating(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -63,7 +71,7 @@ function ValidationDocument({ onValidate }) {
       color: darkMode ? '#ffffff' : '#1e293b',
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
+      gap: '8px',
       borderLeft: '4px solid #667eea',
       paddingLeft: '16px'
     },
@@ -88,14 +96,6 @@ function ValidationDocument({ onValidate }) {
       color: darkMode ? '#94a3b8' : '#64748b',
       marginTop: '4px'
     },
-    commentairePorteur: {
-      fontSize: '13px',
-      marginTop: '10px',
-      padding: '10px',
-      background: darkMode ? '#0f172a' : '#f8fafc',
-      borderRadius: '10px',
-      color: darkMode ? '#cbd5e1' : '#475569'
-    },
     textarea: {
       width: '100%',
       padding: '12px',
@@ -116,7 +116,8 @@ function ValidationDocument({ onValidate }) {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      fontWeight: '500'
     },
     btnRefuse: {
       background: '#ef4444',
@@ -127,14 +128,22 @@ function ValidationDocument({ onValidate }) {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      fontWeight: '500'
+    },
+    disabledBtn: {
+      opacity: 0.6,
+      cursor: 'not-allowed'
     }
   };
 
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.emptyState}>Chargement...</div>
+        <div style={styles.emptyState}>
+          <FontAwesomeIcon icon={faSpinner} spin size="2x" />
+          <p>Chargement des soumissions...</p>
+        </div>
       </div>
     );
   }
@@ -162,13 +171,13 @@ function ValidationDocument({ onValidate }) {
               Soumis le: {new Date(s.dateSoumission).toLocaleDateString()}
             </div>
             {s.commentairePorteur && (
-              <div style={styles.commentairePorteur}>
-                <strong>💬 Commentaire:</strong> {s.commentairePorteur}
+              <div style={{ marginTop: '10px', padding: '10px', background: darkMode ? '#0f172a' : '#f8fafc', borderRadius: '10px', fontSize: '13px' }}>
+                <strong>💬 Commentaire du porteur:</strong> {s.commentairePorteur}
               </div>
             )}
 
             <textarea
-              placeholder="Feedback pour le porteur..."
+              placeholder="Feedback pour le porteur (obligatoire pour un refus)..."
               value={feedback[s._id] || ''}
               onChange={(e) => setFeedback({ ...feedback, [s._id]: e.target.value })}
               style={styles.textarea}
@@ -176,11 +185,27 @@ function ValidationDocument({ onValidate }) {
             />
             
             <div style={styles.buttonGroup}>
-              <button onClick={() => handleValidation(s._id, true)} style={styles.btnValid}>
-                <FontAwesomeIcon icon={faCheck} size="sm" /> Valider
+              <button 
+                onClick={() => handleValidation(s._id, true)} 
+                disabled={validating[s._id]}
+                style={{
+                  ...styles.btnValid,
+                  ...(validating[s._id] ? styles.disabledBtn : {})
+                }}
+              >
+                {validating[s._id] ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheck} />}
+                Valider
               </button>
-              <button onClick={() => handleValidation(s._id, false)} style={styles.btnRefuse}>
-                <FontAwesomeIcon icon={faTimes} size="sm" /> Refuser
+              <button 
+                onClick={() => handleValidation(s._id, false)} 
+                disabled={validating[s._id]}
+                style={{
+                  ...styles.btnRefuse,
+                  ...(validating[s._id] ? styles.disabledBtn : {})
+                }}
+              >
+                {validating[s._id] ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faTimes} />}
+                Refuser
               </button>
             </div>
           </div>
