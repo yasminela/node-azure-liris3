@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import NotificationPopup from './NotificationPopup';
 import api from '../utils/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faTachometerAlt, 
   faSun, 
   faMoon, 
   faCamera,
@@ -26,6 +25,7 @@ function Navbar({ user, onLogout }) {
   const [uploading, setUploading] = useState(false);
   const profileMenuRef = useRef(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
@@ -64,13 +64,7 @@ function Navbar({ user, onLogout }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     if (onLogout) onLogout();
-    window.location.href = '/login';
-  };
-
-  // SOLUTION : Utiliser window.location.href au lieu de navigate
-  const handleDashboardClick = () => {
-    console.log('Dashboard clicked - redirecting to /');
-    window.location.href = '/';
+    navigate('/login');
   };
 
   const handleChangePhoto = () => {
@@ -151,8 +145,6 @@ function Navbar({ user, onLogout }) {
     return null;
   };
 
-  const isActive = (path) => location.pathname === path;
-
   const styles = {
     nav: {
       background: scrolled 
@@ -190,20 +182,6 @@ function Navbar({ user, onLogout }) {
       alignItems: 'center',
       gap: '16px'
     },
-    dashboardBtn: {
-      background: isActive('/') ? '#667eea' : 'transparent',
-      color: isActive('/') ? 'white' : (darkMode ? '#cbd5e1' : '#475569'),
-      padding: '8px 16px',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      border: 'none',
-      fontSize: '14px',
-      fontWeight: '500',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      transition: 'all 0.2s ease'
-    },
     themeBtn: {
       background: 'none',
       color: darkMode ? '#f1f5f9' : '#475569',
@@ -225,7 +203,7 @@ function Navbar({ user, onLogout }) {
       background: darkMode ? '#334155' : '#f1f5f9',
       cursor: 'pointer',
       border: 'none',
-      transition: 'all 0.2s ease'
+      transition: 'all 0.3s ease'
     },
     avatar: {
       width: '32px',
@@ -269,7 +247,7 @@ function Navbar({ user, onLogout }) {
       gap: '12px',
       padding: '12px 16px',
       cursor: 'pointer',
-      transition: 'background 0.2s ease',
+      transition: 'all 0.3s ease',
       color: darkMode ? '#f1f5f9' : '#1e293b',
       fontSize: '14px'
     },
@@ -294,8 +272,7 @@ function Navbar({ user, onLogout }) {
       right: 0,
       bottom: 0,
       background: 'rgba(0,0,0,0.5)',
-      zIndex: 999,
-      animation: 'fadeIn 0.3s ease'
+      zIndex: 999
     },
     mobileMenu: {
       position: 'fixed',
@@ -308,8 +285,7 @@ function Navbar({ user, onLogout }) {
       padding: '20px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '16px',
-      animation: 'slideIn 0.3s ease'
+      gap: '16px'
     },
     mobileMenuHeader: {
       display: 'flex',
@@ -324,8 +300,7 @@ function Navbar({ user, onLogout }) {
       cursor: 'pointer',
       fontSize: '15px',
       fontWeight: '500',
-      color: darkMode ? '#f1f5f9' : '#1e293b',
-      transition: 'background 0.2s ease'
+      color: darkMode ? '#f1f5f9' : '#1e293b'
     }
   };
 
@@ -336,25 +311,20 @@ function Navbar({ user, onLogout }) {
     <>
       <nav style={styles.nav}>
         <div style={styles.navContainer}>
-          <div style={styles.logoContainer} onClick={handleDashboardClick}>
+          <div style={styles.logoContainer}>
             <img src="/logo-incubiny.png" alt="Incubiny" style={styles.logo} />
             <h2 style={styles.logoText}>Incubiny</h2>
           </div>
 
           <div style={styles.desktopMenu}>
-            <button onClick={handleDashboardClick} style={styles.dashboardBtn}>
-              <FontAwesomeIcon icon={faTachometerAlt} />
-              Dashboard
-            </button>
-
             <NotificationPopup />
 
-            <button onClick={toggleDarkMode} style={styles.themeBtn}>
+            <button className="btn-shine" onClick={toggleDarkMode} style={styles.themeBtn}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
             </button>
 
             <div style={styles.profileContainer} ref={profileMenuRef}>
-              <button style={styles.profileBtn} onClick={() => setProfileMenuOpen(!profileMenuOpen)}>
+              <button className="btn-shine" style={styles.profileBtn} onClick={() => setProfileMenuOpen(!profileMenuOpen)}>
                 {hasAvatar ? (
                   <img src={avatarUrl} alt="Avatar" style={styles.avatar} />
                 ) : (
@@ -366,13 +336,13 @@ function Navbar({ user, onLogout }) {
 
               {profileMenuOpen && (
                 <div style={styles.profileMenu}>
-                  <div style={styles.menuItem} onClick={handleChangePhoto}>
+                  <div className="btn-shine" style={styles.menuItem} onClick={handleChangePhoto}>
                     <FontAwesomeIcon icon={faCamera} />
                     Changer la photo
                   </div>
                   
                   {hasAvatar && (
-                    <div style={styles.menuItem} onClick={handleDeletePhoto}>
+                    <div className="btn-shine" style={styles.menuItem} onClick={handleDeletePhoto}>
                       <FontAwesomeIcon icon={faTrashAlt} />
                       Supprimer la photo
                     </div>
@@ -380,7 +350,7 @@ function Navbar({ user, onLogout }) {
                   
                   <div style={styles.menuDivider} />
                   
-                  <div style={{ ...styles.menuItem, ...styles.dangerItem }} onClick={handleLogout}>
+                  <div className="btn-shine" style={{ ...styles.menuItem, ...styles.dangerItem }} onClick={handleLogout}>
                     <FontAwesomeIcon icon={faSignOutAlt} />
                     Déconnexion
                   </div>
@@ -389,7 +359,7 @@ function Navbar({ user, onLogout }) {
             </div>
           </div>
 
-          <button onClick={() => setMobileMenuOpen(true)} style={styles.mobileMenuBtn}>
+          <button className="btn-shine" onClick={() => setMobileMenuOpen(true)} style={styles.mobileMenuBtn}>
             <FontAwesomeIcon icon={faBars} />
           </button>
         </div>
@@ -426,21 +396,18 @@ function Navbar({ user, onLogout }) {
               </div>
             </div>
             
-            <div style={styles.mobileMenuItem} onClick={handleDashboardClick}>
-              <FontAwesomeIcon icon={faTachometerAlt} /> Dashboard
-            </div>
-            <div style={styles.mobileMenuItem} onClick={handleChangePhoto}>
+            <div className="btn-shine" style={styles.mobileMenuItem} onClick={handleChangePhoto}>
               <FontAwesomeIcon icon={faCamera} /> Changer la photo
             </div>
             {hasAvatar && (
-              <div style={styles.mobileMenuItem} onClick={handleDeletePhoto}>
+              <div className="btn-shine" style={styles.mobileMenuItem} onClick={handleDeletePhoto}>
                 <FontAwesomeIcon icon={faTrashAlt} /> Supprimer la photo
               </div>
             )}
-            <div style={styles.mobileMenuItem} onClick={toggleDarkMode}>
+            <div className="btn-shine" style={styles.mobileMenuItem} onClick={toggleDarkMode}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} /> {darkMode ? 'Mode clair' : 'Mode sombre'}
             </div>
-            <div style={{ ...styles.mobileMenuItem, marginTop: 'auto', color: '#ef4444' }} onClick={handleLogout}>
+            <div className="btn-shine" style={{ ...styles.mobileMenuItem, marginTop: 'auto', color: '#ef4444' }} onClick={handleLogout}>
               <FontAwesomeIcon icon={faSignOutAlt} /> Déconnexion
             </div>
           </div>
@@ -449,8 +416,27 @@ function Navbar({ user, onLogout }) {
 
       <style dangerouslySetInnerHTML={{
         __html: `
-          @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          .btn-shine {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+          }
+          .btn-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+          }
+          .btn-shine:hover::before {
+            left: 100%;
+          }
+          .btn-shine:hover {
+            transform: translateY(-2px);
+          }
           @media (max-width: 768px) {
             .desktop-menu {
               display: none !important;

@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
-import Icon from './Icon';
-import { iconColors } from '../styles/iconColors';
 import { useTheme } from '../context/ThemeContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faRocket, 
+  faBullseye, 
+  faUsers, 
+  faCalendarAlt, 
+  faChevronDown, 
+  faChevronUp, 
+  faLightbulb, 
+  faChartLine, 
+  faHandshake, 
+  faTrophy,
+  faClock
+} from '@fortawesome/free-solid-svg-icons';
 
 const moisImages = {
   1: '/mois1.png',
@@ -18,85 +30,64 @@ const etapesProgramme = [
     titre: "Idéation & Créativité", 
     description: "Transformez votre idée en concept structuré", 
     objectif: "Définir votre vision et valider votre concept",
-    actionsCles: [
-      "Atelier Posture entrepreneuriale",
-      "Méthodologie Design thinking",
-      "Intervention Mentors"
-    ],
     ateliers: ["Posture entrepreneuriale - Mme Lamia Ben Ammar", "Design Thinking - Mme Sameh Chemli"],
-    duree: "4 semaines"
+    duree: "4 semaines",
+    icon: faLightbulb
   },
   { 
     mois: 2, 
     titre: "Business Model & Stratégie", 
     description: "Construisez votre modèle économique", 
     objectif: "Finaliser votre Business Model Canvas",
-    actionsCles: [
-      "Workshop Green Business Model Canvas",
-      "Analyse de marché approfondie",
-      "Définition de la stratégie pricing"
-    ],
-    ateliers: ["Green Business Model Canvas - Mme Dorsaf Hlel", "Veille marché & analyse de données - I. Masmoudi, M. Chammem"],
-    duree: "4 semaines"
+    ateliers: ["Green Business Model Canvas - Mme Dorsaf Hlel", "Veille marché & analyse de données"],
+    duree: "4 semaines",
+    icon: faChartLine
   },
   { 
     mois: 3, 
     titre: "Étude de faisabilité", 
     description: "Validez la viabilité de votre projet", 
     objectif: "Préparer votre dossier de faisabilité",
-    actionsCles: [
-      "Stratégie de Propriété Intellectuelle",
-      "Étude financière prévisionnelle",
-      "Analyse des risques"
-    ],
     ateliers: ["Propriété intellectuelle - Mme Neila Ben Slima", "Étude financière - Mme Lamia Ben Ammar"],
-    duree: "4 semaines"
+    duree: "4 semaines",
+    icon: faBullseye
   },
   { 
     mois: 4, 
     titre: "Prototypage & Solution", 
     description: "Donnez vie à votre produit", 
     objectif: "Développer un prototype fonctionnel",
-    actionsCles: [
-      "Utilisation du Maker Space",
-      "Atelier Proof of Concept",
-      "Support technique DATADOIT"
-    ],
     ateliers: ["Maker Space - Prototypage", "Proof of Concept - Tech Lab", "Support DATADOIT"],
-    duree: "4 semaines"
+    duree: "4 semaines",
+    icon: faUsers
   },
   { 
     mois: 5, 
     titre: "Branding & Positionnement", 
     description: "Construisez votre identité de marque", 
     objectif: "Développer votre stratégie marketing",
-    actionsCles: [
-      "Création de l'identité visuelle",
-      "Stratégie de contenu digital",
-      "Préparation du lancement produit"
-    ],
-    ateliers: ["Marketing digital & e-réputation - I. Masmoudi", "Proof of Concept (PoC) - Timmo Vander beek", "Immersion startups - Pépinière S2T"],
-    duree: "4 semaines"
+    ateliers: ["Marketing digital & e-réputation", "Immersion startups - Pépinière S2T"],
+    duree: "4 semaines",
+    icon: faHandshake
   },
   { 
     mois: 6, 
     titre: "Préparation à l'incubation", 
     description: "Finalisez votre dossier et pitch", 
     objectif: "Décrocher le label Startup ACT",
-    actionsCles: [
-      "Préparation du pitch deck",
-      "Simulation devant jury",
-      "Dossier de candidature"
-    ],
-    ateliers: ["Atelier pré-label Startup ACT - Coach expert", "Networking avec investisseurs - Réseau d'investisseurs", "Pitch devant comité d'experts - Jury d'incubation"],
-    duree: "4 semaines"
+    ateliers: ["Atelier pré-label Startup ACT", "Networking avec investisseurs", "Pitch devant comité d'experts"],
+    duree: "4 semaines",
+    icon: faTrophy
   }
 ];
 
 function EarlyStageTimeline() {
   const { darkMode } = useTheme();
   const [expandedMois, setExpandedMois] = useState(null);
-  const [imageLoaded, setImageLoaded] = useState({});
+
+  const toggleExpand = (mois) => {
+    setExpandedMois(expandedMois === mois ? null : mois);
+  };
 
   const getMoisColor = (mois) => {
     const colors = {
@@ -110,19 +101,11 @@ function EarlyStageTimeline() {
     return colors[mois] || '#9333ea';
   };
 
-  const toggleExpand = (mois) => {
-    setExpandedMois(expandedMois === mois ? null : mois);
-  };
-
-  const handleImageLoad = (mois) => {
-    setImageLoaded(prev => ({ ...prev, [mois]: true }));
-  };
-
   const styles = {
     container: {
       background: darkMode ? '#1e293b' : 'white',
       borderRadius: '24px',
-      padding: '20px',
+      padding: '24px',
       marginBottom: '32px'
     },
     header: {
@@ -134,22 +117,22 @@ function EarlyStageTimeline() {
     title: {
       fontSize: '26px',
       fontWeight: 'bold',
-      background: `linear-gradient(135deg, #9333ea, #6366f1)`,
+      background: 'linear-gradient(135deg, #9333ea, #ec4899, #06b6d4)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '12px',
-      marginBottom: '12px'
+      gap: '12px'
     },
     badge: {
-      background: `linear-gradient(135deg, #9333ea, #6366f1)`,
+      background: 'linear-gradient(135deg, #9333ea, #ec4899)',
       color: 'white',
       padding: '6px 16px',
       borderRadius: '30px',
       fontSize: '13px',
       fontWeight: 'bold',
-      display: 'inline-block'
+      display: 'inline-block',
+      marginTop: '8px'
     },
     objectifFinal: {
       marginTop: '16px',
@@ -157,34 +140,34 @@ function EarlyStageTimeline() {
       padding: '10px 20px',
       borderRadius: '16px',
       fontSize: '14px',
-      fontWeight: '600',
+      fontWeight: '500',
       color: darkMode ? '#fbbf24' : '#92400e',
       display: 'inline-block'
     },
-    timelineGrid: {
+    grid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-      gap: '20px'
+      gap: '24px',
+      marginTop: '24px'
     },
-    etapeCard: {
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+    card: {
+      background: darkMode ? '#0f172a' : '#ffffff',
       borderRadius: '20px',
       overflow: 'hidden',
-      transition: 'all 0.3s ease',
       cursor: 'pointer',
-      background: darkMode ? '#1e293b' : 'white'
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      transition: 'transform 0.2s'
     },
-    etapeImageWrapper: {
+    imgWrapper: {
       position: 'relative',
       height: '180px',
       overflow: 'hidden',
-      background: darkMode ? '#0f172a' : '#f1f5f9'
+      background: darkMode ? '#1e293b' : '#f1f5f9'
     },
-    etapeImage: {
+    img: {
       width: '100%',
       height: '100%',
-      objectFit: 'cover',
-      transition: 'transform 0.3s ease'
+      objectFit: 'cover'
     },
     moisBadge: (mois) => ({
       position: 'absolute',
@@ -192,27 +175,34 @@ function EarlyStageTimeline() {
       right: '12px',
       background: getMoisColor(mois),
       color: 'white',
-      padding: '4px 12px',
+      padding: '6px 14px',
       borderRadius: '20px',
       fontSize: '12px',
-      fontWeight: 'bold',
-      zIndex: 2
+      fontWeight: 'bold'
     }),
-    etapeContent: {
-      padding: '16px'
+    content: {
+      padding: '20px'
     },
-    etapeHeader: {
+    cardHeader: {
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: '12px',
-      flexWrap: 'wrap',
-      gap: '8px'
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '12px'
     },
-    etapeTitre: {
+    iconWrapper: {
+      width: '40px',
+      height: '40px',
+      borderRadius: '12px',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#9333ea'
+    },
+    cardTitle: {
       fontSize: '18px',
       fontWeight: 'bold',
-      color: darkMode ? '#f1f5f9' : '#1e293b',
+      color: darkMode ? '#ffffff' : '#1e293b',
       flex: 1
     },
     dureeBadge: {
@@ -220,8 +210,7 @@ function EarlyStageTimeline() {
       color: darkMode ? '#94a3b8' : '#64748b',
       padding: '4px 10px',
       borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: '500'
+      fontSize: '11px'
     },
     description: {
       color: darkMode ? '#cbd5e1' : '#475569',
@@ -229,28 +218,26 @@ function EarlyStageTimeline() {
       lineHeight: '1.5',
       marginBottom: '16px',
       paddingLeft: '12px',
-      borderLeft: `3px solid #9333ea`
+      borderLeft: '3px solid #9333ea'
     },
     expandBtn: {
+      marginTop: '10px',
+      color: '#9333ea',
       background: 'none',
       border: 'none',
-      color: '#9333ea',
       cursor: 'pointer',
-      padding: '8px 0',
       fontSize: '13px',
-      fontWeight: '500',
       display: 'flex',
       alignItems: 'center',
       gap: '6px',
       width: '100%',
       justifyContent: 'center',
-      marginTop: '8px'
+      padding: '8px 0'
     },
     expandedContent: {
       marginTop: '16px',
       paddingTop: '16px',
-      borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-      animation: 'slideDown 0.3s ease'
+      borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     section: {
       marginBottom: '16px'
@@ -258,24 +245,11 @@ function EarlyStageTimeline() {
     sectionTitle: {
       fontSize: '13px',
       fontWeight: 'bold',
-      color: darkMode ? '#94a3b8' : '#64748b',
       marginBottom: '8px',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
-    },
-    actionsList: {
-      listStyle: 'none',
-      padding: 0,
-      margin: 0
-    },
-    actionItem: {
-      padding: '6px 0 6px 20px',
-      fontSize: '13px',
-      color: darkMode ? '#cbd5e1' : '#475569',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      color: darkMode ? '#94a3b8' : '#64748b'
     },
     ateliersList: {
       display: 'flex',
@@ -290,24 +264,10 @@ function EarlyStageTimeline() {
       fontSize: '12px',
       color: darkMode ? '#e2e8f0' : '#475569'
     },
-    statsRow: {
-      display: 'flex',
-      gap: '16px',
-      marginTop: '16px',
-      paddingTop: '12px',
-      borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-    },
-    statItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      fontSize: '12px',
-      color: darkMode ? '#94a3b8' : '#64748b'
-    },
     footer: {
       marginTop: '32px',
       padding: '24px',
-      background: `linear-gradient(135deg, #9333ea, #6366f1)`,
+      background: 'linear-gradient(135deg, #9333ea, #ec4899, #06b6d4)',
       borderRadius: '20px',
       textAlign: 'center',
       color: 'white'
@@ -328,41 +288,40 @@ function EarlyStageTimeline() {
     <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.title}>
-          🚀 Programme Early Stage
+          <FontAwesomeIcon icon={faRocket} />
+          Programme Early Stage
         </div>
         <div>
           <span style={styles.badge}>🎓 6 mois d'accompagnement intensif</span>
         </div>
-        <div>
-          <span style={styles.objectifFinal}>
-            🎯 Objectif : Décrocher le label Startup ACT
-          </span>
+        <div style={styles.objectifFinal}>
+          🎯 Objectif final : Décrocher le label Startup ACT
         </div>
       </div>
 
-      <div style={styles.timelineGrid}>
+      <div style={styles.grid}>
         {etapesProgramme.map((etape) => (
           <div 
             key={etape.mois} 
-            style={styles.etapeCard}
+            style={styles.card}
             onClick={() => toggleExpand(etape.mois)}
           >
-            <div style={styles.etapeImageWrapper}>
+            <div style={styles.imgWrapper}>
               <span style={styles.moisBadge(etape.mois)}>Mois {etape.mois}</span>
               <img 
                 src={moisImages[etape.mois]} 
-                alt={etape.titre}
-                style={styles.etapeImage}
-                onLoad={() => handleImageLoad(etape.mois)}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
+                alt={`Mois ${etape.mois}`}
+                style={styles.img}
+                onError={(e) => e.target.style.display = 'none'}
               />
             </div>
 
-            <div style={styles.etapeContent}>
-              <div style={styles.etapeHeader}>
-                <div style={styles.etapeTitre}>{etape.titre}</div>
+            <div style={styles.content}>
+              <div style={styles.cardHeader}>
+                <div style={styles.iconWrapper}>
+                  <FontAwesomeIcon icon={etape.icon} />
+                </div>
+                <div style={styles.cardTitle}>{etape.titre}</div>
                 <span style={styles.dureeBadge}>{etape.duree}</span>
               </div>
               
@@ -372,20 +331,18 @@ function EarlyStageTimeline() {
                 <div style={styles.expandedContent}>
                   <div style={styles.section}>
                     <div style={styles.sectionTitle}>
-                      ✅ Actions Clés
+                      <FontAwesomeIcon icon={faBullseye} />
+                      Objectif
                     </div>
-                    <div style={styles.actionsList}>
-                      {etape.actionsCles.map((action, idx) => (
-                        <div key={idx} style={styles.actionItem}>
-                          ▸ {action}
-                        </div>
-                      ))}
+                    <div style={{ fontSize: '13px', color: darkMode ? '#cbd5e1' : '#475569' }}>
+                      {etape.objectif}
                     </div>
                   </div>
 
                   <div style={styles.section}>
                     <div style={styles.sectionTitle}>
-                      👥 Ateliers
+                      <FontAwesomeIcon icon={faUsers} />
+                      Ateliers
                     </div>
                     <div style={styles.ateliersList}>
                       {etape.ateliers.map((atelier, idx) => (
@@ -395,20 +352,12 @@ function EarlyStageTimeline() {
                       ))}
                     </div>
                   </div>
-
-                  <div style={styles.statsRow}>
-                    <div style={styles.statItem}>
-                      📅 {etape.duree}
-                    </div>
-                    <div style={styles.statItem}>
-                      📄 Livrable requis
-                    </div>
-                  </div>
                 </div>
               )}
 
               <button style={styles.expandBtn}>
-                {expandedMois === etape.mois ? "▲ Voir moins" : "▼ Voir plus"}
+                <FontAwesomeIcon icon={expandedMois === etape.mois ? faChevronUp : faChevronDown} />
+                {expandedMois === etape.mois ? "Voir moins" : "Voir plus"}
               </button>
             </div>
           </div>
@@ -416,19 +365,10 @@ function EarlyStageTimeline() {
       </div>
 
       <div style={styles.footer}>
-        🏆
-        <p style={styles.footerText}>🎤 Pitch devant un comité d'experts</p>
+        <FontAwesomeIcon icon={faTrophy} size={28} />
+        <p style={styles.footerText}>Pitch devant un comité d'experts</p>
         <p style={styles.footerSubtext}>Préparez-vous à convaincre les meilleurs investisseurs !</p>
       </div>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `
-      }} />
     </div>
   );
 }

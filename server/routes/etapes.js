@@ -14,7 +14,7 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = './telechargements';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
   filename: (req, file, cb) => {
@@ -25,17 +25,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Assigner les étapes Early-Stage
+// Assigner les étapes Early-Stage (admin)
 router.post('/assigner-early-stage', auth, isAdmin, async (req, res) => {
   try {
     const { porteurId, projetId } = req.body;
     
-    await Etape.deleteMany({ porteurId, type: 'early-stage' });
+    if (!porteurId || !projetId) {
+      return res.status(400).json({ message: 'Porteur et projet requis' });
+    }
+    
+    await Etape.deleteMany({ porteurId: porteurId, type: 'early-stage' });
     
     for (const etape of etapesEarlyStage) {
       await Etape.create({
-        porteurId,
-        projetId,
+        porteurId: porteurId,
+        projetId: projetId,
         numero: etape.numero,
         titre: etape.titre,
         description: etape.description,
@@ -46,36 +50,44 @@ router.post('/assigner-early-stage', auth, isAdmin, async (req, res) => {
       });
     }
     
+    await Notification.create({
+      utilisateurId: porteurId,
+      titre: 'Programme Early-Stage assigné',
+      message: `Le programme Early-Stage (${etapesEarlyStage.length} étapes) vous a été assigné.`,
+      type: 'info',
+      estLue: false,
+      lien: '/'
+    });
+    
     res.json({ success: true, message: `${etapesEarlyStage.length} étapes assignées` });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Soumettre une étape
+// Soumettre une étape (porteur)
 router.post('/soumettre', auth, upload.single('fichier'), async (req, res) => {
   try {
     const { etapeId, commentaire } = req.body;
+    let documentUrl = req.file ? req.file.path : null;
     
     const etape = await Etape.findByIdAndUpdate(
       etapeId,
-      {
-        documentUrl: req.file?.path,
-        commentairePorteur: commentaire,
-        statut: 'soumise',
-        dateSoumission: new Date()
-      },
+      { documentUrl, commentairePorteur: commentaire, statut: 'soumise', dateSoumission: new Date() },
       { new: true }
     );
+    
+    if (!etape) return res.status(404).json({ message: 'Étape non trouvée' });
     
     const admins = await Utilisateur.find({ role: 'admin' });
     for (const admin of admins) {
       await Notification.create({
         utilisateurId: admin._id,
-        titre: "📄 Nouvelle soumission",
-        message: `L'étape "${etape.titre}" a été soumise par ${req.user.firstName} ${req.user.lastName}`,
+        titre: '📄 Nouvelle soumission',
+        message: `L'étape "${etape.titre}" a été soumise`,
         type: 'info',
-        estLue: false
+        estLue: false,
+        lien: '/admin#soumissions'
       });
     }
     
@@ -85,7 +97,7 @@ router.post('/soumettre', auth, upload.single('fichier'), async (req, res) => {
   }
 });
 
-// Mes étapes
+// Mes étapes (porteur)
 router.get('/mes-etapes', auth, async (req, res) => {
   try {
     const etapes = await Etape.find({ porteurId: req.user.id });
@@ -95,33 +107,46 @@ router.get('/mes-etapes', auth, async (req, res) => {
   }
 });
 
-// Soumissions en attente (admin)
-router.get('/soumissions', auth, isAdmin, async (req, res) => {
+// Mes soumissions (porteur) - ROUTE AJOUTÉE
+router.get('/mes-soumissions', auth, async (req, res) => {
   try {
-    const soumissions = await Etape.find({ statut: 'soumise' })
-      .populate('porteurId', 'firstName lastName email');
+    const soumissions = await Etape.find({ 
+      porteurId: req.user.id,
+      statut: { $in: ['soumise', 'validee', 'refusee'] }
+    }).sort({ dateSoumission: -1 });
     res.json(soumissions);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Valider une étape
-router.post('/valider/:id', auth, isAdmin, async (req, res) => {
+// Soumissions en attente (admin)
+router.get('/soumissions', auth, isAdmin, async (req, res) => {
   try {
-    const { feedback } = req.body;
+    const soumissions = await Etape.find({ statut: 'soumise' }).populate('porteurId', 'firstName lastName email');
+    res.json(soumissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Valider une étape (admin)
+router.put('/valider/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { commentaire } = req.body;
     const etape = await Etape.findByIdAndUpdate(
       req.params.id,
-      { statut: 'validee', commentaireAdmin: feedback, dateValidation: new Date() },
+      { statut: 'validee', commentaireAdmin: commentaire, dateValidation: new Date() },
       { new: true }
     );
     
     await Notification.create({
       utilisateurId: etape.porteurId,
-      titre: "✅ Étape validée",
-      message: `Votre étape "${etape.titre}" a été validée.${feedback ? ` Feedback: ${feedback}` : ''}`,
+      titre: '✅ Étape validée',
+      message: `Votre étape "${etape.titre}" a été validée.`,
       type: 'succes',
-      estLue: false
+      estLue: false,
+      lien: '/'
     });
     
     res.json({ message: 'Étape validée', etape });
@@ -130,22 +155,23 @@ router.post('/valider/:id', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Refuser une étape
-router.post('/refuser/:id', auth, isAdmin, async (req, res) => {
+// Refuser une étape (admin)
+router.put('/refuser/:id', auth, isAdmin, async (req, res) => {
   try {
-    const { feedback } = req.body;
+    const { commentaire } = req.body;
     const etape = await Etape.findByIdAndUpdate(
       req.params.id,
-      { statut: 'refusee', commentaireAdmin: feedback, dateValidation: new Date() },
+      { statut: 'refusee', commentaireAdmin: commentaire, dateValidation: new Date() },
       { new: true }
     );
     
     await Notification.create({
       utilisateurId: etape.porteurId,
-      titre: "❌ Étape à reprendre",
-      message: `Votre étape "${etape.titre}" nécessite des modifications. Feedback: ${feedback}`,
+      titre: '⚠️ Étape à reprendre',
+      message: `Votre étape "${etape.titre}" nécessite des modifications. Feedback: ${commentaire}`,
       type: 'erreur',
-      estLue: false
+      estLue: false,
+      lien: '/'
     });
     
     res.json({ message: 'Étape refusée', etape });

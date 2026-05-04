@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Connexion from './pages/Connexion';
 import TableauBordPorteur from './pages/TableauBordPorteur';
@@ -55,26 +55,33 @@ function App() {
   }
 
   return (
-    <ThemeProvider>
-      <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" replace /> : <Connexion onLogin={handleLogin} />} />
-        <Route 
-          path="/" 
-          element={
-            user ? (
-              user.role === "admin" ? 
-                <TableauBordAdmin key="admin" user={user} onLogout={handleLogout} /> : 
-                <TableauBordPorteur key="porteur" user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        <Route path="/calendrier" element={user ? <Calendrier /> : <Navigate to="/login" replace />} />
-        <Route path="/etapes" element={user ? <SuiviEtapes /> : <Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </ThemeProvider>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <ThemeProvider>
+        <Routes>
+          <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
+          <Route 
+            path="/" 
+            element={
+              user ? (
+                user.role === "admin" ? 
+                  <TableauBordAdmin user={user} onLogout={handleLogout} /> : 
+                  <TableauBordPorteur user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            } 
+          />
+          <Route path="/calendrier" element={user ? <Calendrier /> : <Navigate to="/login" />} />
+          <Route path="/etapes" element={user ? <SuiviEtapes /> : <Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 

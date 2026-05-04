@@ -9,8 +9,8 @@ import ModifierPorteur from '../composants/ModifierPorteur';
 import ValidationDocument from '../composants/ValidationDocument';
 import AssignerEtapes from '../composants/AssignerEtapes';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
-import GestionAnalysesIA from '../composants/GestionAnalysesIA';
 import ScoresPorteurs from '../composants/ScoresPorteurs';
+import GestionAnalysesIA from '../composants/GestionAnalysesIA';
 import AvatarManager from '../composants/AvatarManager';
 import GlassCard from '../composants/ui/GlassCard';
 import ToastNotification from '../composants/ui/ToastNotification';
@@ -19,7 +19,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
   faUserPlus, faPaperPlane, faTasks, faUserCircle, 
-  faExclamationTriangle, faEdit, faTrash, faCheck, faTimes
+  faExclamationTriangle, faEdit, faTrash, faCheck, faTimes,
+  faTachometerAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordAdmin({ user, onLogout }) {
@@ -36,6 +37,19 @@ function TableauBordAdmin({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(user);
   const [toast, setToast] = useState(null);
+
+  const colors = {
+    primary: '#9333ea',
+    primaryLight: '#a855f7',
+    primaryDark: '#7e22ce',
+    secondary: '#ec4899',
+    secondaryLight: '#f472b6',
+    accent: '#06b6d4',
+    gradient1: 'linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #06b6d4 100%)',
+    gradient2: 'linear-gradient(135deg, #7e22ce 0%, #db2777 100%)',
+    gradientBgLight: 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.08) 0%, rgba(236, 72, 153, 0.05) 50%, rgba(6, 182, 212, 0.03) 100%)',
+    gradientBgDark: 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.15) 0%, rgba(236, 72, 153, 0.08) 50%, rgba(6, 182, 212, 0.05) 100%)'
+  };
 
   useEffect(() => {
     loadAllData();
@@ -88,7 +102,7 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   const handleDeletePorteur = async (id) => {
-    if (confirm('Supprimer ce porteur ?')) {
+    if (window.confirm('Supprimer ce porteur ?')) {
       try {
         await api.delete(`/utilisateurs/${id}`);
         await loadAllData();
@@ -100,7 +114,7 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   const handleDeleteProjet = async (id) => {
-    if (confirm('Supprimer ce projet ?')) {
+    if (window.confirm('Supprimer ce projet ?')) {
       try {
         await api.delete(`/projets/${id}`);
         await loadAllData();
@@ -142,36 +156,111 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   const styles = {
-    container: { padding: 'clamp(16px, 5vw, 24px)', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh' },
-    profileCard: { display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' },
+    container: { 
+      padding: 'clamp(16px, 5vw, 24px)', 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      minHeight: 'calc(100vh - 200px)',
+      position: 'relative',
+      zIndex: 1
+    },
+    backgroundDecoration: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: darkMode ? '#0f172a' : '#f8fafc',
+      zIndex: 0,
+      overflow: 'hidden'
+    },
+    gradientOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: darkMode ? colors.gradientBgDark : colors.gradientBgLight,
+      zIndex: 1
+    },
+    profileCard: { 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '24px', 
+      flexWrap: 'wrap',
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: '24px',
+      padding: '24px',
+      marginBottom: '24px',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      position: 'relative',
+      zIndex: 2
+    },
     profileInfo: { flex: 1 },
-    profileName: { fontSize: 'clamp(20px, 4vw, 24px)', fontWeight: 'bold', marginBottom: '4px', color: darkMode ? '#f1f5f9' : '#1e293b' },
-    profileEmail: { color: darkMode ? '#94a3b8' : '#475569', marginBottom: '8px', fontSize: 'clamp(12px, 3vw, 14px)' },
+    profileName: { 
+      fontSize: 'clamp(20px, 4vw, 24px)', 
+      fontWeight: 'bold', 
+      marginBottom: '4px', 
+      background: darkMode ? 'linear-gradient(135deg, #f1f5f9, #cbd5e1)' : colors.gradient1,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    },
+    profileEmail: { 
+      color: darkMode ? '#94a3b8' : '#475569', 
+      marginBottom: '8px', 
+      fontSize: 'clamp(12px, 3vw, 14px)' 
+    },
     profileBadge: {
-      background: 'linear-gradient(135deg, #9333ea20, #06b6d420)',
-      color: '#9333ea',
+      background: colors.gradient2,
+      color: 'white',
       padding: '4px 12px',
       borderRadius: '20px',
       fontSize: '12px',
       display: 'inline-block'
     },
-    statsContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'clamp(16px, 3vw, 24px)', marginBottom: '32px' },
+    statsContainer: { 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+      gap: 'clamp(16px, 3vw, 24px)', 
+      marginBottom: '32px',
+      position: 'relative',
+      zIndex: 2
+    },
     statCard: {
       padding: 'clamp(16px, 4vw, 24px)',
       borderRadius: '24px',
       textAlign: 'center',
       cursor: 'pointer',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      transition: 'all 0.3s ease',
       minHeight: '160px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
-      background: darkMode ? '#1e293b' : 'white',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`
     },
-    statNumber: { fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 'bold', marginBottom: '8px', color: darkMode ? '#f1f5f9' : '#1e293b' },
-    statLabel: { fontSize: 'clamp(12px, 3vw, 14px)', color: darkMode ? '#94a3b8' : '#475569' },
-    buttonGroup: { display: 'flex', gap: '16px', marginBottom: '30px', flexWrap: 'wrap' },
+    statNumber: { 
+      fontSize: 'clamp(28px, 5vw, 36px)', 
+      fontWeight: 'bold', 
+      marginBottom: '8px', 
+      background: darkMode ? 'linear-gradient(135deg, #c084fc, #f472b6, #22d3ee)' : colors.gradient1,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    },
+    statLabel: { 
+      fontSize: 'clamp(12px, 3vw, 14px)', 
+      color: darkMode ? '#94a3b8' : '#475569' 
+    },
+    buttonGroup: { 
+      display: 'flex', 
+      gap: '16px', 
+      marginBottom: '30px', 
+      flexWrap: 'wrap',
+      position: 'relative',
+      zIndex: 2
+    },
     actionBtn: { 
       padding: 'clamp(10px, 2vw, 12px) clamp(16px, 4vw, 24px)', 
       border: 'none', 
@@ -181,19 +270,22 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'flex', 
       alignItems: 'center', 
       gap: '10px', 
-      transition: 'transform 0.2s',
-      background: darkMode ? '#1e293b' : '#f8fafc',
+      transition: 'all 0.3s ease',
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
       color: darkMode ? '#f1f5f9' : '#1e293b'
     },
-    btnPrimary: { background: '#9333ea', color: 'white' },
+    btnPrimary: { background: colors.gradient1, color: 'white' },
     btnSuccess: { background: '#10b981', color: 'white' },
-    btnPurple: { background: '#8b5cf6', color: 'white' },
+    btnPurple: { background: colors.gradient2, color: 'white' },
     infoCard: { 
-      background: darkMode ? '#1e293b' : 'white', 
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
       borderRadius: '20px', 
       padding: 'clamp(16px, 4vw, 24px)', 
       marginBottom: '24px', 
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}` 
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      position: 'relative',
+      zIndex: 2
     },
     sectionTitle: { 
       fontSize: 'clamp(18px, 4vw, 20px)', 
@@ -203,7 +295,7 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'flex', 
       alignItems: 'center', 
       gap: '10px', 
-      borderLeft: '4px solid #9333ea', 
+      borderLeft: `4px solid ${colors.primary}`, 
       paddingLeft: '16px' 
     },
     table: { width: '100%', borderCollapse: 'collapse', marginTop: '15px', overflowX: 'auto' },
@@ -227,10 +319,19 @@ function TableauBordAdmin({ user, onLogout }) {
     btnValidate: { background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
     btnReject: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
     emptyState: { textAlign: 'center', padding: 'clamp(30px, 8vw, 48px)', color: darkMode ? '#94a3b8' : '#475569' },
-    tabsContainer: { display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, paddingBottom: '12px', flexWrap: 'wrap' },
+    tabsContainer: { 
+      display: 'flex', 
+      gap: '8px', 
+      marginBottom: '24px', 
+      paddingBottom: '12px', 
+      flexWrap: 'wrap',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      position: 'relative',
+      zIndex: 2
+    },
     tab: (active) => ({
       padding: '10px 20px',
-      background: active ? '#9333ea' : 'transparent',
+      background: active ? colors.gradient1 : 'transparent',
       color: active ? 'white' : (darkMode ? '#94a3b8' : '#475569'),
       border: 'none',
       borderRadius: '10px',
@@ -245,13 +346,16 @@ function TableauBordAdmin({ user, onLogout }) {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
       gap: '20px',
-      marginBottom: '30px'
+      marginBottom: '30px',
+      position: 'relative',
+      zIndex: 2
     },
     programCard: {
-      background: darkMode ? '#1e293b' : 'white',
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
       borderRadius: '16px',
       padding: '16px',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
       transition: 'transform 0.2s',
       cursor: 'pointer'
     },
@@ -273,7 +377,7 @@ function TableauBordAdmin({ user, onLogout }) {
       <div>
         <Navbar user={currentUser} onLogout={onLogout} />
         <div className="loading-container">
-          <div style={{ width: '48px', height: '48px', border: '3px solid rgba(147, 51, 234, 0.2)', borderTop: '3px solid #9333ea', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ width: '48px', height: '48px', border: `3px solid ${colors.primary}20`, borderTop: `3px solid ${colors.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <p style={{ color: darkMode ? '#94a3b8' : '#475569' }}>Chargement du tableau de bord...</p>
         </div>
       </div>
@@ -281,29 +385,45 @@ function TableauBordAdmin({ user, onLogout }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: darkMode ? '#0f172a' : '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', position: 'relative', background: darkMode ? '#0f172a' : '#f8fafc' }}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
+          .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
+          .btn-shine:hover::before { left: 100%; }
+          .btn-shine:hover { transform: translateY(-2px); }
+          .stat-card:hover, .program-card:hover { transform: translateY(-5px); }
+        `
+      }} />
+
+      <div style={styles.backgroundDecoration}>
+        <div style={styles.gradientOverlay} />
+      </div>
+
       <Navbar user={currentUser} onLogout={onLogout} />
+      
       <div style={styles.container}>
-        
         {/* Profile Card Admin */}
-        <GlassCard>
-          <div style={styles.profileCard}>
-            <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} />
-            <div style={styles.profileInfo}>
-              <h1 style={styles.profileName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
-              <p style={styles.profileEmail}>{currentUser?.email}</p>
-              <span style={styles.profileBadge}><FontAwesomeIcon icon={faUserCircle} style={{ marginRight: '6px' }} /> Administrateur</span>
-            </div>
+        <div style={styles.profileCard}>
+          <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} />
+          <div style={styles.profileInfo}>
+            <h1 style={styles.profileName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
+            <p style={styles.profileEmail}>{currentUser?.email}</p>
+            <span style={styles.profileBadge}>
+              <FontAwesomeIcon icon={faUserCircle} style={{ marginRight: '6px' }} /> 
+              Administrateur
+            </span>
           </div>
-        </GlassCard>
+        </div>
 
         {/* Programme Images */}
         <div style={styles.programCards}>
-          <div style={styles.programCard}>
+          <div className="program-card" style={styles.programCard}>
             <img src="/prog1.png" alt="Master Plan" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
             <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
           </div>
-          <div style={styles.programCard}>
+          <div className="program-card" style={styles.programCard}>
             <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
             <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
           </div>
@@ -311,39 +431,66 @@ function TableauBordAdmin({ user, onLogout }) {
 
         <EarlyStageTimeline />
 
+        {/* Tabs */}
         <div style={styles.tabsContainer}>
-          <button style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}><FontAwesomeIcon icon={faChartLine} /> Tableau de bord</button>
-          <button style={styles.tab(activeTab === 'porteurs')} onClick={() => setActiveTab('porteurs')}><FontAwesomeIcon icon={faUsers} /> Porteurs ({porteurs.length})</button>
-          <button style={styles.tab(activeTab === 'projets')} onClick={() => setActiveTab('projets')}><FontAwesomeIcon icon={faBuilding} /> Projets à valider</button>
-          <button style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}><FontAwesomeIcon icon={faFileAlt} /> Soumissions ({stats.soumissions})</button>
-          <button style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}><FontAwesomeIcon icon={faEye} /> Analyses IA</button>
-          <button style={styles.tab(activeTab === 'scores')} onClick={() => setActiveTab('scores')}><FontAwesomeIcon icon={faChartLine} /> Scores porteurs</button>
+          <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
+            <FontAwesomeIcon icon={faTachometerAlt} /> Tableau de bord
+          </button>
+          <button className="btn-shine" style={styles.tab(activeTab === 'porteurs')} onClick={() => setActiveTab('porteurs')}>
+            <FontAwesomeIcon icon={faUsers} /> Porteurs ({porteurs.length})
+          </button>
+          <button className="btn-shine" style={styles.tab(activeTab === 'projets')} onClick={() => setActiveTab('projets')}>
+            <FontAwesomeIcon icon={faBuilding} /> Projets à valider
+          </button>
+          <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
+            <FontAwesomeIcon icon={faFileAlt} /> Soumissions ({stats.soumissions})
+          </button>
+          {/* ANALYSES IA - ONGLET AJOUTÉ */}
+          <button className="btn-shine" style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}>
+            <FontAwesomeIcon icon={faEye} /> Analyses IA
+          </button>
+          <button className="btn-shine" style={styles.tab(activeTab === 'scores')} onClick={() => setActiveTab('scores')}>
+            <FontAwesomeIcon icon={faChartLine} /> Scores porteurs
+          </button>
         </div>
 
+        {/* Dashboard Content */}
         {activeTab === 'dashboard' && (
           <>
             <div style={styles.statsContainer}>
-              <div style={styles.statCard}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#9333ea15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><FontAwesomeIcon icon={faBuilding} size="2x" color="#9333ea" /></div>
+              <div className="stat-card" style={styles.statCard}>
+                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.primary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <FontAwesomeIcon icon={faBuilding} size="2x" color={colors.primary} />
+                </div>
                 <div style={styles.statNumber}>{stats.projets}</div>
                 <div style={styles.statLabel}>Projets</div>
               </div>
-              <div style={styles.statCard}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#9333ea15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><FontAwesomeIcon icon={faUsers} size="2x" color="#9333ea" /></div>
+              <div className="stat-card" style={styles.statCard}>
+                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.secondary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <FontAwesomeIcon icon={faUsers} size="2x" color={colors.secondary} />
+                </div>
                 <div style={styles.statNumber}>{stats.porteurs}</div>
                 <div style={styles.statLabel}>Porteurs</div>
               </div>
-              <div style={styles.statCard}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#f59e0b15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><FontAwesomeIcon icon={faExclamationTriangle} size="2x" color="#f59e0b" /></div>
+              <div className="stat-card" style={styles.statCard}>
+                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#f59e0b15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <FontAwesomeIcon icon={faExclamationTriangle} size="2x" color="#f59e0b" />
+                </div>
                 <div style={styles.statNumber}>{stats.soumissions}</div>
                 <div style={styles.statLabel}>Soumissions en attente</div>
               </div>
             </div>
 
             <div style={styles.buttonGroup}>
-              <button onClick={() => setShowCreationPorteur(true)} style={{ ...styles.actionBtn, ...styles.btnPrimary }}><FontAwesomeIcon icon={faUserPlus} /> Créer un porteur</button>
-              <button onClick={() => setShowEnvoiTache(true)} style={{ ...styles.actionBtn, ...styles.btnSuccess }}><FontAwesomeIcon icon={faPaperPlane} /> Envoyer une tâche</button>
-              <button onClick={() => setShowAssignerEtapes(true)} style={{ ...styles.actionBtn, ...styles.btnPurple }}><FontAwesomeIcon icon={faTasks} /> Assigner programme Early-Stage</button>
+              <button className="btn-shine" onClick={() => setShowCreationPorteur(true)} style={{ ...styles.actionBtn, ...styles.btnPrimary }}>
+                <FontAwesomeIcon icon={faUserPlus} /> Créer un porteur
+              </button>
+              <button className="btn-shine" onClick={() => setShowEnvoiTache(true)} style={{ ...styles.actionBtn, ...styles.btnSuccess }}>
+                <FontAwesomeIcon icon={faPaperPlane} /> Envoyer une tâche
+              </button>
+              <button className="btn-shine" onClick={() => setShowAssignerEtapes(true)} style={{ ...styles.actionBtn, ...styles.btnPurple }}>
+                <FontAwesomeIcon icon={faTasks} /> Assigner programme Early-Stage
+              </button>
             </div>
 
             <Calendrier onEventAdded={loadAllData} />
@@ -351,6 +498,7 @@ function TableauBordAdmin({ user, onLogout }) {
           </>
         )}
 
+        {/* Porteurs Content */}
         {activeTab === 'porteurs' && (
           <div style={styles.infoCard}>
             <div style={styles.sectionTitle}><FontAwesomeIcon icon={faUsers} /> Liste des porteurs</div>
@@ -376,10 +524,10 @@ function TableauBordAdmin({ user, onLogout }) {
                         <td style={styles.td}>{p.telephone || '—'}</td>
                         <td style={styles.td}>{p.nomProjet || '—'}</td>
                         <td style={styles.td}>
-                          <button onClick={() => { setSelectedPorteur(p); setShowEditPorteur(true); }} style={styles.btnEdit}>
+                          <button className="btn-shine" onClick={() => { setSelectedPorteur(p); setShowEditPorteur(true); }} style={styles.btnEdit}>
                             <FontAwesomeIcon icon={faEdit} size="sm" /> Modifier
                           </button>
-                          <button onClick={() => handleDeletePorteur(p._id)} style={styles.btnDelete}>
+                          <button className="btn-shine" onClick={() => handleDeletePorteur(p._id)} style={styles.btnDelete}>
                             <FontAwesomeIcon icon={faTrash} size="sm" /> Supprimer
                           </button>
                         </td>
@@ -392,6 +540,7 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
+        {/* Projets Content */}
         {activeTab === 'projets' && (
           <div style={styles.infoCard}>
             <div style={styles.sectionTitle}><FontAwesomeIcon icon={faBuilding} /> Projets à valider</div>
@@ -415,10 +564,10 @@ function TableauBordAdmin({ user, onLogout }) {
                         <td style={styles.td}>{p.porteurId?.firstName} {p.porteurId?.lastName}</td>
                         <td style={styles.td}>{getStatutBadge(p.statut)}</td>
                         <td style={styles.td}>
-                          <button onClick={() => handleValidateProjet(p._id, 'valide', '')} style={styles.btnValidate}>
+                          <button className="btn-shine" onClick={() => handleValidateProjet(p._id, 'valide', '')} style={styles.btnValidate}>
                             <FontAwesomeIcon icon={faCheck} size="sm" /> Valider
                           </button>
-                          <button onClick={() => handleValidateProjet(p._id, 'rejete', 'Projet non conforme')} style={styles.btnReject}>
+                          <button className="btn-shine" onClick={() => handleValidateProjet(p._id, 'rejete', 'Projet non conforme')} style={styles.btnReject}>
                             <FontAwesomeIcon icon={faTimes} size="sm" /> Rejeter
                           </button>
                         </td>
@@ -431,13 +580,19 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
+        {/* Soumissions Content */}
         {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
+
+        {/* ANALYSES IA Content - AJOUTÉ */}
         {activeTab === 'analyses' && <GestionAnalysesIA />}
+
+        {/* Scores Content */}
         {activeTab === 'scores' && <ScoresPorteurs />}
       </div>
 
       <PiedDePage />
 
+      {/* Modals */}
       {showCreationPorteur && <CreationPorteur onClose={() => setShowCreationPorteur(false)} onSuccess={() => { loadAllData(); }} />}
       {showEnvoiTache && <EnvoiTache onClose={() => setShowEnvoiTache(false)} onSuccess={loadAllData} />}
       {showAssignerEtapes && <AssignerEtapes onClose={() => setShowAssignerEtapes(false)} onSuccess={loadAllData} />}

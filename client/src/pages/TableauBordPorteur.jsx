@@ -5,26 +5,25 @@ import Navbar from '../composants/Navbar';
 import Calendrier from '../composants/Calendrier';
 import SuiviEtapes from '../composants/SuiviEtapes';
 import CreerProjet from '../composants/CreerProjet';
-import Icon from '../composants/Icon';
 import PiedDePage from '../composants/PiedDePage';
 import AvatarManager from '../composants/AvatarManager';
 import GestionAnalysesIA from '../composants/GestionAnalysesIA';
 import ValidationDocument from '../composants/ValidationDocument';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
-import GlassCard from '../composants/ui/GlassCard';
 import ToastNotification from '../composants/ui/ToastNotification';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChartLine, faFileAlt, faEye, faCheck, faTimes, 
   faExclamationTriangle, faBuilding, faTasks, faUpload,
-  faDownload, faShareAlt, faHistory, faBell, faRocket,
-  faCalendar, faClipboardList, faUserGraduate, faAward
+  faRocket, faClipboardList, faUserGraduate, faAward,
+  faCalendar, faBell, faHistory
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordPorteur({ user, onLogout }) {
   const { darkMode } = useTheme();
   const [projets, setProjets] = useState([]);
   const [taches, setTaches] = useState([]);
+  const [etapes, setEtapes] = useState([]);
   const [showCreerProjet, setShowCreerProjet] = useState(false);
   const [stats, setStats] = useState({ projetsCount: 0, tachesCount: 0, etapesCount: 0, progression: 0 });
   const [loading, setLoading] = useState(true);
@@ -32,13 +31,19 @@ function TableauBordPorteur({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [soumissions, setSoumissions] = useState([]);
   const [toast, setToast] = useState(null);
-  const [analyses, setAnalyses] = useState([]);
+
+  const colors = {
+    primary: '#9333ea',
+    primaryLight: '#a855f7',
+    secondary: '#ec4899',
+    gradient1: 'linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #06b6d4 100%)',
+    gradient2: 'linear-gradient(135deg, #7e22ce 0%, #db2777 100%)'
+  };
 
   useEffect(() => {
     loadData();
     loadUserProfile();
     loadSoumissions();
-    loadAnalysesIA();
   }, []);
 
   const showToastMessage = (type, message) => {
@@ -74,10 +79,11 @@ function TableauBordPorteur({ user, onLogout }) {
       ]);
       setProjets(projetsRes.data || []);
       setTaches(tachesRes.data || []);
+      setEtapes(etapesRes.data || []);
 
-      const etapes = etapesRes.data || [];
-      const etapesRestantes = etapes.filter(e => e.statut !== 'validee').length;
-      const totalEtapes = etapes.length || 1;
+      const etapesData = etapesRes.data || [];
+      const etapesRestantes = etapesData.filter(e => e.statut !== 'validee').length;
+      const totalEtapes = etapesData.length || 1;
       const progression = Math.round(((totalEtapes - etapesRestantes) / totalEtapes) * 100);
 
       setStats({
@@ -103,15 +109,6 @@ function TableauBordPorteur({ user, onLogout }) {
     }
   };
 
-  const loadAnalysesIA = async () => {
-    try {
-      const res = await api.get('/analyses/mes-analyses');
-      setAnalyses(res.data || []);
-    } catch (error) {
-      console.error('Erreur chargement analyses IA:', error);
-    }
-  };
-
   const getStatutBadge = (statut) => {
     const badges = {
       en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faExclamationTriangle },
@@ -128,27 +125,58 @@ function TableauBordPorteur({ user, onLogout }) {
   };
 
   const styles = {
-    container: { padding: 'clamp(16px, 4vw, 24px)', maxWidth: '1400px', margin: '0 auto' },
+    container: { 
+      padding: 'clamp(16px, 4vw, 24px)', 
+      maxWidth: '1400px', 
+      margin: '0 auto',
+      minHeight: 'calc(100vh - 200px)',
+      position: 'relative',
+      zIndex: 1
+    },
+    backgroundDecoration: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: darkMode ? '#0f172a' : '#f8fafc',
+      zIndex: 0
+    },
+    gradientOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: darkMode ? 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.15) 0%, rgba(236, 72, 153, 0.08) 50%, rgba(6, 182, 212, 0.05) 100%)' : 'radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.08) 0%, rgba(236, 72, 153, 0.05) 50%, rgba(6, 182, 212, 0.03) 100%)',
+      zIndex: 1
+    },
     headerCard: { 
-      background: darkMode ? '#1e293b' : 'white', 
-      borderRadius: '20px', 
-      padding: '24px', 
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: '24px',
+      padding: '24px',
       marginBottom: '24px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       flexWrap: 'wrap',
-      gap: '20px'
+      gap: '20px',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      position: 'relative',
+      zIndex: 2
     },
     userInfo: { display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' },
     userName: { 
       fontSize: 'clamp(20px, 5vw, 24px)', 
       fontWeight: 'bold', 
-      color: darkMode ? '#ffffff' : '#1e293b',
+      background: darkMode ? 'linear-gradient(135deg, #f1f5f9, #cbd5e1)' : colors.gradient1,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       marginBottom: '4px' 
     },
     userEmail: { 
-      color: darkMode ? '#cbd5e1' : '#64748b',
+      color: darkMode ? '#cbd5e1' : '#475569',
       fontSize: '13px', 
       display: 'flex', 
       alignItems: 'center', 
@@ -156,56 +184,15 @@ function TableauBordPorteur({ user, onLogout }) {
     },
     userRole: { 
       marginTop: '8px',
-      background: darkMode ? '#334155' : '#667eea20', 
-      color: darkMode ? '#a5b4fc' : '#667eea', 
+      background: colors.gradient2,
+      color: 'white', 
       padding: '4px 12px', 
       borderRadius: '20px', 
       fontSize: '11px',
       display: 'inline-block'
     },
-    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '24px' },
-    statCard: {
-      background: darkMode ? '#1e293b' : 'white',
-      padding: '20px',
-      borderRadius: '16px',
-      textAlign: 'center',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-    },
-    statValue: { 
-      fontSize: 'clamp(28px, 5vw, 36px)', 
-      fontWeight: 'bold', 
-      color: darkMode ? '#ffffff' : '#1e293b'
-    },
-    statLabel: { 
-      fontSize: '13px', 
-      color: darkMode ? '#cbd5e1' : '#64748b',
-      marginTop: '6px' 
-    },
-    progressionCard: {
-      background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '16px',
-      padding: '20px',
-      marginBottom: '24px',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-    },
-    progressionTitle: { 
-      fontSize: '18px', 
-      fontWeight: 'bold', 
-      marginBottom: '16px', 
-      color: darkMode ? '#ffffff' : '#1e293b',
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '8px' 
-    },
-    progressionBar: { background: darkMode ? '#334155' : '#e2e8f0', borderRadius: '10px', height: '8px', overflow: 'hidden', marginTop: '12px' },
-    progressionFill: { background: 'linear-gradient(135deg, #667eea, #764ba2)', height: '100%', width: `${stats.progression}%`, borderRadius: '10px' },
-    progressionText: { 
-      fontSize: '13px', 
-      color: darkMode ? '#cbd5e1' : '#64748b',
-      marginTop: '12px' 
-    },
     btnPrimary: {
-      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+      background: colors.gradient1,
       color: 'white',
       border: 'none',
       padding: '12px 24px',
@@ -216,12 +203,82 @@ function TableauBordPorteur({ user, onLogout }) {
       alignItems: 'center',
       gap: '8px'
     },
-    infoCard: {
-      background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '16px',
+    statsGrid: { 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+      gap: '20px', 
+      marginBottom: '24px',
+      position: 'relative',
+      zIndex: 2
+    },
+    statCard: {
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      padding: '20px',
+      borderRadius: '20px',
+      textAlign: 'center',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      transition: 'all 0.3s ease',
+      cursor: 'pointer'
+    },
+    statValue: { 
+      fontSize: 'clamp(28px, 5vw, 36px)', 
+      fontWeight: 'bold', 
+      background: darkMode ? 'linear-gradient(135deg, #c084fc, #f472b6, #22d3ee)' : colors.gradient1,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    },
+    statLabel: { 
+      fontSize: '13px', 
+      color: darkMode ? '#cbd5e1' : '#64748b',
+      marginTop: '6px' 
+    },
+    progressionCard: {
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: '20px',
       padding: '20px',
       marginBottom: '24px',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      position: 'relative',
+      zIndex: 2
+    },
+    progressionTitle: { 
+      fontSize: '18px', 
+      fontWeight: 'bold', 
+      marginBottom: '16px', 
+      color: darkMode ? '#ffffff' : '#1e293b',
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '8px' 
+    },
+    progressionBar: { 
+      background: darkMode ? '#334155' : '#e2e8f0', 
+      borderRadius: '10px', 
+      height: '8px', 
+      overflow: 'hidden', 
+      marginTop: '12px' 
+    },
+    progressionFill: { 
+      background: colors.gradient1, 
+      height: '100%', 
+      width: `${stats.progression}%`, 
+      borderRadius: '10px' 
+    },
+    progressionText: { 
+      fontSize: '13px', 
+      color: darkMode ? '#cbd5e1' : '#64748b',
+      marginTop: '12px' 
+    },
+    infoCard: {
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: '20px',
+      padding: '20px',
+      marginBottom: '24px',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
+      position: 'relative',
+      zIndex: 2
     },
     sectionTitle: { 
       fontSize: '18px', 
@@ -231,7 +288,7 @@ function TableauBordPorteur({ user, onLogout }) {
       display: 'flex', 
       alignItems: 'center', 
       gap: '8px',
-      borderLeft: '4px solid #667eea',
+      borderLeft: `4px solid ${colors.primary}`,
       paddingLeft: '16px'
     },
     table: { width: '100%', borderCollapse: 'collapse' },
@@ -260,11 +317,13 @@ function TableauBordPorteur({ user, onLogout }) {
       marginBottom: '24px', 
       borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, 
       paddingBottom: '12px', 
-      flexWrap: 'wrap' 
+      flexWrap: 'wrap',
+      position: 'relative',
+      zIndex: 2
     },
     tab: (active) => ({
       padding: '10px 20px',
-      background: active ? '#667eea' : 'transparent',
+      background: active ? colors.gradient1 : 'transparent',
       color: active ? 'white' : (darkMode ? '#94a3b8' : '#475569'),
       border: 'none',
       borderRadius: '10px',
@@ -279,13 +338,16 @@ function TableauBordPorteur({ user, onLogout }) {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
       gap: '20px',
-      marginBottom: '24px'
+      marginBottom: '24px',
+      position: 'relative',
+      zIndex: 2
     },
     programImageCard: {
-      background: darkMode ? '#1e293b' : 'white',
+      background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(12px)',
       borderRadius: '16px',
       padding: '16px',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.2)'}`,
       transition: 'transform 0.2s',
       textAlign: 'center'
     },
@@ -307,7 +369,7 @@ function TableauBordPorteur({ user, onLogout }) {
       <div>
         <Navbar user={currentUser} onLogout={onLogout} />
         <div style={{ textAlign: 'center', padding: '50px', color: darkMode ? '#cbd5e1' : '#64748b' }}>
-          <div style={{ width: '48px', height: '48px', border: '3px solid rgba(102, 126, 234, 0.2)', borderTop: '3px solid #667eea', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <div style={{ width: '48px', height: '48px', border: `3px solid ${colors.primary}20`, borderTop: `3px solid ${colors.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
           ⏳ Chargement de votre espace porteur...
         </div>
       </div>
@@ -315,106 +377,87 @@ function TableauBordPorteur({ user, onLogout }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: darkMode ? '#0f172a' : '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', position: 'relative', background: darkMode ? '#0f172a' : '#f8fafc' }}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
+          .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
+          .btn-shine:hover::before { left: 100%; }
+          .btn-shine:hover { transform: translateY(-2px); }
+          .stat-card:hover, .program-card:hover { transform: translateY(-5px); }
+        `
+      }} />
+
+      <div style={styles.backgroundDecoration}>
+        <div style={styles.gradientOverlay} />
+      </div>
+
       <Navbar user={currentUser} onLogout={onLogout} />
       
       <div style={styles.container}>
         {/* Header avec avatar */}
-        <GlassCard>
-          <div style={styles.headerCard}>
-            <div style={styles.userInfo}>
-              <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} size="large" />
-              <div>
-                <h1 style={styles.userName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
-                <div style={styles.userEmail}>
-                  <Icon name="email" size={14} color={darkMode ? '#cbd5e1' : '#64748b'} />
-                  {currentUser?.email}
-                </div>
-                <div style={styles.userRole}>
-                  <FontAwesomeIcon icon={faUserGraduate} style={{ marginRight: '6px' }} />
-                  Porteur de projet - Programme Early Stage
-                </div>
+        <div style={styles.headerCard}>
+          <div style={styles.userInfo}>
+            <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} size="large" />
+            <div>
+              <h1 style={styles.userName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
+              <div style={styles.userEmail}>
+                <span>📧</span>
+                {currentUser?.email}
+              </div>
+              <div style={styles.userRole}>
+                <FontAwesomeIcon icon={faUserGraduate} style={{ marginRight: '6px' }} />
+                Porteur de projet - Programme Early Stage
               </div>
             </div>
-            <button onClick={() => setShowCreerProjet(true)} style={styles.btnPrimary}>
-              <FontAwesomeIcon icon={faBuilding} /> Nouveau projet
-            </button>
           </div>
-        </GlassCard>
-
-        {/* Programme Images - Comme dans l'admin */}
-        <div style={styles.programImagesContainer}>
-          <div style={styles.programImageCard}>
-            <img 
-              src="/prog1.png" 
-              alt="Master Plan" 
-              style={styles.programImage} 
-              onError={(e) => e.target.style.display = 'none'} 
-            />
-            <p style={styles.programCaption}>
-              <FontAwesomeIcon icon={faRocket} style={{ marginRight: '6px', color: '#667eea' }} />
-              Le Master Plan : 3 Phases de Transformation
-            </p>
-          </div>
-          <div style={styles.programImageCard}>
-            <img 
-              src="/prog2.png" 
-              alt="Écosystème Dual" 
-              style={styles.programImage} 
-              onError={(e) => e.target.style.display = 'none'} 
-            />
-            <p style={styles.programCaption}>
-              <FontAwesomeIcon icon={faClipboardList} style={{ marginRight: '6px', color: '#667eea' }} />
-              La Matrice de Soutien : Un Écosystème Dual
-            </p>
-          </div>
+          <button className="btn-shine" onClick={() => setShowCreerProjet(true)} style={styles.btnPrimary}>
+            <FontAwesomeIcon icon={faBuilding} /> Nouveau projet
+          </button>
         </div>
 
-        {/* Timeline du programme Early Stage - Comme dans l'admin */}
-        <EarlyStageTimeline />
-
-        {/* Onglets pour les différentes sections */}
+        {/* Onglets */}
         <div style={styles.tabsContainer}>
-          <button style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
+          <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faChartLine} /> Tableau de bord
           </button>
-          <button style={styles.tab(activeTab === 'programme')} onClick={() => setActiveTab('programme')}>
+          <button className="btn-shine" style={styles.tab(activeTab === 'programme')} onClick={() => setActiveTab('programme')}>
             <FontAwesomeIcon icon={faRocket} /> Mon programme
           </button>
-          <button style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
+          <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
             <FontAwesomeIcon icon={faUpload} /> Mes soumissions ({soumissions.length})
           </button>
-          <button style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}>
+          <button className="btn-shine" style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}>
             <FontAwesomeIcon icon={faEye} /> Analyses IA
           </button>
         </div>
 
+        {/* TABLEAU DE BORD */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Statistiques */}
             <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard}>
                 <div style={styles.statValue}>{stats.projetsCount}</div>
                 <div style={styles.statLabel}>Mes projets</div>
               </div>
-              <div style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard}>
                 <div style={styles.statValue}>{stats.tachesCount}</div>
                 <div style={styles.statLabel}>Tâches à faire</div>
               </div>
-              <div style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard}>
                 <div style={styles.statValue}>{stats.etapesCount}</div>
                 <div style={styles.statLabel}>Étapes restantes</div>
               </div>
-              <div style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard}>
                 <div style={styles.statValue}>{soumissions.filter(s => s.statut === 'en_attente').length}</div>
                 <div style={styles.statLabel}>Soumissions en attente</div>
               </div>
             </div>
 
-            {/* Progression */}
             <div style={styles.progressionCard}>
               <div style={styles.progressionTitle}>
-                <FontAwesomeIcon icon={faAward} color="#667eea" />
+                <FontAwesomeIcon icon={faAward} color={colors.primary} />
                 Progression du programme Early Stage
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -433,13 +476,11 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
             </div>
 
-            {/* Calendrier */}
             <Calendrier />
 
-            {/* Mes projets */}
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>
-                <FontAwesomeIcon icon={faBuilding} color="#667eea" /> 
+                <FontAwesomeIcon icon={faBuilding} color={colors.primary} /> 
                 Mes projets
               </div>
               {projets.length === 0 ? (
@@ -448,13 +489,7 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={styles.table}>
                     <thead>
-                      <tr>
-                        <th style={styles.th}>Projet</th>
-                        <th style={styles.th}>Description</th>
-                        <th style={styles.th}>Statut</th>
-                        <th style={styles.th}>Date</th>
-                      </tr>
-                    </thead>
+                      <tr><th style={styles.th}>Projet</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date</th></tr></thead>
                     <tbody>
                       {projets.map(p => (
                         <tr key={p._id}>
@@ -470,10 +505,9 @@ function TableauBordPorteur({ user, onLogout }) {
               )}
             </div>
 
-            {/* Tâches */}
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>
-                <FontAwesomeIcon icon={faTasks} color="#667eea" /> 
+                <FontAwesomeIcon icon={faTasks} color={colors.primary} /> 
                 Tâches externes
               </div>
               {taches.length === 0 ? (
@@ -482,13 +516,7 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={styles.table}>
                     <thead>
-                      <tr>
-                        <th style={styles.th}>Tâche</th>
-                        <th style={styles.th}>Description</th>
-                        <th style={styles.th}>Statut</th>
-                        <th style={styles.th}>Date limite</th>
-                      </tr>
-                    </thead>
+                      <tr><th style={styles.th}>Tâche</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date limite</th></tr></thead>
                     <tbody>
                       {taches.map(t => (
                         <tr key={t._id}>
@@ -496,8 +524,8 @@ function TableauBordPorteur({ user, onLogout }) {
                           <td style={styles.td}>{t.description || '—'}</td>
                           <td style={styles.td}>
                             {t.estComplete ? 
-                              <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px', fontSize: '11px' }}>✅ Complétée</span> :
-                              <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '20px', fontSize: '11px' }}>⏳ En cours</span>
+                              <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px' }}>✅ Complétée</span> :
+                              <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '20px' }}>⏳ En cours</span>
                             }
                           </td>
                           <td style={styles.td}>{t.dateLimite ? new Date(t.dateLimite).toLocaleDateString() : '—'}</td>
@@ -511,30 +539,28 @@ function TableauBordPorteur({ user, onLogout }) {
           </>
         )}
 
+        {/* MON PROGRAMME - Sans titre en double */}
         {activeTab === 'programme' && (
           <>
-            {/* Ré-afficher le programme complet */}
             <div style={styles.programImagesContainer}>
-              <div style={styles.programImageCard}>
+              <div className="program-card" style={styles.programImageCard}>
                 <img src="/prog1.png" alt="Master Plan" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
                 <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
               </div>
-              <div style={styles.programImageCard}>
+              <div className="program-card" style={styles.programImageCard}>
                 <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
                 <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
               </div>
             </div>
+
             <EarlyStageTimeline />
-            <div style={styles.infoCard}>
-              <div style={styles.sectionTitle}>
-                <FontAwesomeIcon icon={faClipboardList} color="#667eea" />
-                Suivi détaillé des étapes
-              </div>
-              <SuiviEtapes />
-            </div>
+
+            {/* SuiviEtapes contient déjà son propre titre "Programme Early Stage - Mes étapes" */}
+            <SuiviEtapes />
           </>
         )}
 
+        {/* MES SOUMISSIONS */}
         {activeTab === 'soumissions' && (
           <ValidationDocument 
             onValidate={() => {
@@ -544,9 +570,8 @@ function TableauBordPorteur({ user, onLogout }) {
           />
         )}
 
-        {activeTab === 'analyses' && (
-          <GestionAnalysesIA />
-        )}
+        {/* ANALYSES IA */}
+        {activeTab === 'analyses' && <GestionAnalysesIA />}
       </div>
 
       <PiedDePage />

@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import Icon from './Icon';
-import { iconColors } from '../styles/iconColors';
 import { useTheme } from '../context/ThemeContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faCheckCircle, 
+  faClock, 
+  faUpload, 
+  faTimesCircle,
+  faFilePdf,
+  faSpinner
+} from '@fortawesome/free-solid-svg-icons';
 
 function SuiviEtapes() {
-  const { darkMode } = useTheme(); 
+  const { darkMode } = useTheme();
   const [etapes, setEtapes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEtape, setSelectedEtape] = useState(null);
@@ -46,92 +53,85 @@ function SuiviEtapes() {
       await api.post('/etapes/soumettre', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert(' Étape soumise avec succès !');
+      alert('✅ Étape soumise avec succès !');
       setShowModal(false);
       setSelectedEtape(null);
       setCommentaire('');
       setFichier(null);
       loadEtapes();
     } catch (error) {
-      alert(' Erreur: ' + (error.response?.data?.message || error.message));
+      alert('❌ Erreur: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
     }
   };
 
   const getStatutBadge = (statut) => {
-    const badges = {
-      en_attente: { icon: 'pending', color: iconColors.status.en_attente, bg: '#fef3c7', text: 'En attente' },
-      en_cours: { icon: 'pending', color: iconColors.status.en_cours, bg: '#fef3c7', text: 'En attente' },
-      soumise: { icon: 'send', color: iconColors.status.soumise, bg: '#dbeafe', text: 'Soumise' },
-      validee: { icon: 'check_st', color: iconColors.status.validee, bg: '#d1fae5', text: 'Validée' },
-      refusee: { icon: 'exclamation_point', color: iconColors.status.refusee, bg: '#fee2e2', text: 'Refusée' }
-    };
-    const b = badges[statut] || badges.en_attente;
-    return (
-      <span style={{
-        background: b.bg,
-        color: b.color,
-        padding: '4px 12px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px'
-      }}>
-        <Icon name={b.icon} size={12} color={b.color} />
-        {b.text}
-      </span>
-    );
+    switch(statut) {
+      case 'validee':
+        return <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <FontAwesomeIcon icon={faCheckCircle} size="sm" /> Validée
+        </span>;
+      case 'soumise':
+        return <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <FontAwesomeIcon icon={faClock} size="sm" /> En attente
+        </span>;
+      case 'refusee':
+        return <span style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <FontAwesomeIcon icon={faTimesCircle} size="sm" /> À reprendre
+        </span>;
+      default:
+        return <span style={{ background: darkMode ? '#334155' : '#e2e8f0', color: darkMode ? '#94a3b8' : '#64748b', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <FontAwesomeIcon icon={faClock} size="sm" /> En attente
+        </span>;
+    }
   };
 
   const styles = {
     container: {
-      background: 'white',
+      background: darkMode ? '#1e293b' : 'white',
       borderRadius: '20px',
       padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+      marginBottom: '24px'
     },
     title: {
-      fontSize: '20px',
+      fontSize: '18px',
       fontWeight: 'bold',
       marginBottom: '20px',
-      color: iconColors.black,
+      color: darkMode ? '#ffffff' : '#1e293b',
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
-      borderLeft: `4px solid ${iconColors.primary}`,
+      gap: '8px',
+      borderLeft: '4px solid #667eea',
       paddingLeft: '16px'
     },
-    table: { width: '100%', borderCollapse: 'collapse', overflowX: 'auto' },
+    table: { width: '100%', borderCollapse: 'collapse' },
     th: {
-  padding: '14px',
-  textAlign: 'left',
-  background: darkMode ? '#334155' : '#f8fafc',
-  color: 'var(--text-secondary)',
-  fontWeight: '600',
-  fontSize: '14px',
-  borderBottom: `2px solid #e2e8f0`,
-},
+      padding: '12px',
+      textAlign: 'left',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      color: darkMode ? '#cbd5e1' : '#64748b',
+      fontWeight: '600',
+      fontSize: '13px',
+      borderBottom: `2px solid ${darkMode ? '#475569' : '#e2e8f0'}`
+    },
     td: {
-  padding: '14px',
-  borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-  fontSize: '14px',
-  verticalAlign: 'middle',
-  color: 'var(--text-primary)',
-},
-    disabledBtn: {
-      background: '#cbd5e1',
-      color: iconColors.gray,
+      padding: '12px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      fontSize: '14px',
+      color: darkMode ? '#e2e8f0' : '#475569'
+    },
+    submitBtn: {
+      background: '#667eea',
+      color: 'white',
       border: 'none',
-      padding: '8px 16px',
-      borderRadius: '10px',
+      padding: '6px 12px',
+      borderRadius: '8px',
+      cursor: 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '8px',
-      fontSize: '13px',
-      cursor: 'not-allowed'
+      gap: '6px',
+      fontSize: '12px'
     },
     modalOverlay: {
       position: 'fixed',
@@ -146,84 +146,42 @@ function SuiviEtapes() {
       zIndex: 1000
     },
     modalContent: {
-      background: 'white',
+      background: darkMode ? '#1e293b' : 'white',
       borderRadius: '20px',
-      padding: '28px',
+      padding: '24px',
       maxWidth: '500px',
       width: '90%'
     },
-    modalTitle: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      marginBottom: '20px',
-      color: iconColors.black,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px'
-    },
     textarea: {
       width: '100%',
-      padding: '12px',
-      borderRadius: '12px',
-      border: '1px solid #e2e8f0',
+      padding: '10px',
+      borderRadius: '8px',
+      border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
+      background: darkMode ? '#0f172a' : 'white',
+      color: darkMode ? '#f1f5f9' : '#1e293b',
       marginBottom: '16px',
-      fontSize: '14px',
-      fontFamily: 'inherit'
+      fontSize: '14px'
     },
     fileInput: {
       width: '100%',
-      padding: '12px',
-      borderRadius: '12px',
-      border: '1px solid #e2e8f0',
-      marginBottom: '20px',
-      fontSize: '14px'
+      padding: '10px',
+      borderRadius: '8px',
+      border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
+      background: darkMode ? '#0f172a' : 'white',
+      color: darkMode ? '#f1f5f9' : '#1e293b',
+      marginBottom: '20px'
     },
-    buttonGroup: { display: 'flex', gap: '12px', marginTop: '8px' },
-    submitModalBtn: {
-      background: iconColors.secondary,
-      color: iconColors.white,
-      border: 'none',
-      padding: '12px 24px',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      fontWeight: 'bold',
-      flex: 1,
-      justifyContent: 'center'
-    },
-    cancelModalBtn: {
-      background: '#e2e8f0',
-      color: iconColors.gray,
-      border: 'none',
-      padding: '12px 24px',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      fontWeight: 'bold',
-      flex: 1,
-      justifyContent: 'center'
-    }
+    buttonGroup: { display: 'flex', gap: '12px' }
   };
 
   if (loading) {
-    return (
-      <div style={styles.container}>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Icon name="pending" size={32} color={iconColors.primary} />
-          <p style={{ marginTop: '12px', color: iconColors.gray }}>Chargement des étapes...</p>
-        </div>
-      </div>
-    );
+    return <div style={styles.container}>Chargement...</div>;
   }
 
   return (
     <div style={styles.container}>
       <div style={styles.title}>
-        <Icon name="document" size={22} color={iconColors.primary} />
+        <FontAwesomeIcon icon={faFilePdf} color="#667eea" />
         Programme Early Stage - Mes étapes
       </div>
 
@@ -246,22 +204,19 @@ function SuiviEtapes() {
                 <td style={styles.td}>{getStatutBadge(etape.statut)}</td>
                 <td style={styles.td}>{etape.commentaireAdmin || '—'}</td>
                 <td style={styles.td}>
-                  {(etape.statut === 'en_attente' || etape.statut === 'en_cours' || etape.statut === 'refusee') && (
-                    <button onClick={() => { setSelectedEtape(etape); setShowModal(true); }} style={styles.submitBtn}>
-                      <Icon name="upload" size={14} color={iconColors.white} />
-                      Déposer un document
+                  {(etape.statut === 'en_attente' || etape.statut === 'refusee') && (
+                    <button className="btn-shine" onClick={() => { setSelectedEtape(etape); setShowModal(true); }} style={styles.submitBtn}>
+                      <FontAwesomeIcon icon={faUpload} size="sm" /> Déposer
                     </button>
                   )}
                   {etape.statut === 'soumise' && (
-                    <span style={styles.disabledBtn}>
-                      <Icon name="pending" size={14} color={iconColors.gray} />
-                      En attente de validation
+                    <span style={{ color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <FontAwesomeIcon icon={faSpinner} spin /> En cours...
                     </span>
                   )}
                   {etape.statut === 'validee' && (
-                    <span style={{ ...styles.disabledBtn, background: '#d1fae5', color: iconColors.status.validee }}>
-                      <Icon name="check_st" size={14} color={iconColors.status.validee} />
-                      Validée
+                    <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <FontAwesomeIcon icon={faCheckCircle} /> Validée
                     </span>
                   )}
                 </td>
@@ -274,10 +229,9 @@ function SuiviEtapes() {
       {showModal && selectedEtape && (
         <div style={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalTitle}>
-              <Icon name="upload" size={22} color={iconColors.primary} />
+            <h3 style={{ marginBottom: '20px', color: darkMode ? '#ffffff' : '#1e293b' }}>
               Soumettre : {selectedEtape.titre}
-            </div>
+            </h3>
             <form onSubmit={handleSubmit}>
               <textarea
                 placeholder="Commentaire (optionnel)"
@@ -291,17 +245,13 @@ function SuiviEtapes() {
                 onChange={(e) => setFichier(e.target.files[0])}
                 required
                 style={styles.fileInput}
-                accept=".pdf,.doc,.docx,.jpg,.png,.zip"
+                accept=".pdf,.doc,.docx,.jpg,.png"
               />
               <div style={styles.buttonGroup}>
-                <button type="submit" style={styles.submitModalBtn} disabled={uploading}>
-                  {uploading ? (
-                    <><Icon name="pending" size={16} color={iconColors.white} /> Envoi...</>
-                  ) : (
-                    <><Icon name="send" size={16} color={iconColors.white} /> Soumettre</>
-                  )}
+                <button type="submit" className="btn-shine" style={{ ...styles.submitBtn, flex: 1, justifyContent: 'center' }} disabled={uploading}>
+                  {uploading ? <><FontAwesomeIcon icon={faSpinner} spin /> Envoi...</> : <><FontAwesomeIcon icon={faUpload} /> Soumettre</>}
                 </button>
-                <button type="button" onClick={() => setShowModal(false)} style={styles.cancelModalBtn}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-shine" style={{ background: '#e2e8f0', color: darkMode ? '#1e293b' : '#475569', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
                   Annuler
                 </button>
               </div>

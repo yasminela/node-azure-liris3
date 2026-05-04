@@ -40,7 +40,7 @@ function Calendrier({ onEventAdded }) {
       await api.post('/evenements', formData);
       alert('✅ Événement créé');
       setShowForm(false);
-      setFormData({ titre: '', description: '', dateDebut: '', dateFin: '', lieu: '', type: 'formation' });
+      setFormData({ titre: '', description: '', dateDebut: '', dateFin: '', lieu: '', type: 'formation', affiche: null });
       loadEvents();
       if (onEventAdded) onEventAdded();
     } catch (error) {
@@ -129,7 +129,7 @@ function Calendrier({ onEventAdded }) {
       borderRadius: '20px',
       padding: '24px',
       marginBottom: '24px',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+      boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.05)'
     },
     header: {
       display: 'flex',
@@ -285,7 +285,7 @@ function Calendrier({ onEventAdded }) {
     dayCell: (isToday) => ({
       minHeight: '100px',
       padding: '8px',
-      border: '1px solid #f0f0f0',
+      border: `1px solid ${darkMode ? '#334155' : '#f0f0f0'}`,
       background: isToday ? (darkMode ? '#2d3748' : '#e0e7ff') : (darkMode ? '#1e293b' : 'white')
     }),
     dayNumber: (isToday) => ({
@@ -297,17 +297,18 @@ function Calendrier({ onEventAdded }) {
     eventItem: (typeStyle) => ({
       background: typeStyle.bg,
       color: typeStyle.text,
-      padding: '3px 6px',
-      borderRadius: '4px',
-      marginBottom: '3px',
+      padding: '4px 8px',
+      borderRadius: '6px',
+      marginBottom: '4px',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       cursor: 'pointer',
-      fontSize: '10px',
+      fontSize: '11px',
       display: 'flex',
       alignItems: 'center',
-      gap: '4px'
+      gap: '6px',
+      transition: 'all 0.2s ease'
     }),
     upcomingSection: { marginTop: '24px' },
     upcomingTitle: {
