@@ -91,7 +91,7 @@ function Connexion({ onLogin }) {
     inputIcon: {
       position: 'absolute',
       left: '14px',
-      color: darkMode ? '#64748b' : '#94a3b8'
+      color: darkMode ? '#94a3b8' : '#64748b'
     },
     input: {
       width: '100%',
@@ -99,8 +99,8 @@ function Connexion({ onLogin }) {
       border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
       borderRadius: '12px',
       fontSize: '15px',
-      backgroundColor: darkMode ? '#0f172a' : 'white',
-      color: darkMode ? '#ffffff' : '#1e293b',  // ← TEXTE BLANC EN MODE SOMBRE
+      backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+      color: darkMode ? '#ffffff' : '#1e293b',
       transition: 'all 0.3s ease',
       outline: 'none'
     },
@@ -108,7 +108,7 @@ function Connexion({ onLogin }) {
       position: 'absolute',
       right: '14px',
       cursor: 'pointer',
-      color: darkMode ? '#64748b' : '#94a3b8'
+      color: darkMode ? '#94a3b8' : '#64748b'
     },
     errorMsg: {
       background: darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
@@ -240,6 +240,7 @@ function Connexion({ onLogin }) {
           input:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
           }
         `
       }} />

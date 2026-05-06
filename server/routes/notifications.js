@@ -12,6 +12,7 @@ router.get('/mes-notifications', auth, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(notifs);
   } catch (error) {
+    console.error('Erreur chargement notifications:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -24,8 +25,14 @@ router.put('/:id/lire', auth, async (req, res) => {
       { estLue: true }, 
       { new: true }
     );
+    
+    if (!notif) {
+      return res.status(404).json({ message: 'Notification non trouvée' });
+    }
+    
     res.json(notif);
   } catch (error) {
+    console.error('Erreur marquage lecture:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -39,6 +46,64 @@ router.put('/tout-lire', auth, async (req, res) => {
     );
     res.json({ message: 'Toutes les notifications ont été marquées comme lues' });
   } catch (error) {
+    console.error('Erreur marquage tout lu:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ==================== ROUTE AJOUTÉE ====================
+// Envoyer des recommandations de formations au porteur (admin)
+router.post('/envoyer-recommandations', auth, isAdmin, async (req, res) => {
+  console.log('📥 /envoyer-recommandations appelé');
+  
+  try {
+    const { porteurId, formations, evenements } = req.body;
+    
+    if (!porteurId) {
+      return res.status(400).json({ message: 'Porteur non spécifié' });
+    }
+    
+    const porteur = await Utilisateur.findById(porteurId);
+    if (!porteur) {
+      return res.status(404).json({ message: 'Porteur non trouvé' });
+    }
+    
+    let message = `📚 **Nouvelles recommandations disponibles**\n\n`;
+    
+    if (formations && formations.length > 0) {
+      message += `**Formations recommandées :**\n`;
+      formations.forEach(f => message += `• ${f}\n`);
+      message += `\n`;
+    }
+    
+    if (evenements && evenements.length > 0) {
+      message += `**Événements recommandés :**\n`;
+      evenements.forEach(e => {
+        if (typeof e === 'object') {
+          message += `• ${e.titre} - ${new Date(e.dateDebut).toLocaleDateString('fr-FR')}\n`;
+        } else {
+          message += `• ${e}\n`;
+        }
+      });
+    }
+    
+    await Notification.create({
+      utilisateurId: porteurId,
+      titre: '📚 Nouvelles recommandations disponibles',
+      message: message,
+      type: 'info',
+      estLue: false,
+      lien: '/#analyses'
+    });
+    
+    console.log(`✅ Recommandations envoyées à ${porteur.email}`);
+    
+    res.json({ 
+      success: true, 
+      message: `${formations?.length || 0} formation(s) et ${evenements?.length || 0} événement(s) recommandés au porteur` 
+    });
+  } catch (error) {
+    console.error('❌ Erreur envoi recommandations:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -99,6 +164,7 @@ router.get('/analyses', auth, isAdmin, async (req, res) => {
     
     res.json(analyses);
   } catch (error) {
+    console.error('Erreur récupération analyses:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -125,6 +191,7 @@ router.post('/analyses/:id/feedback', auth, isAdmin, async (req, res) => {
     
     res.json({ success: true, message: 'Feedback envoyé' });
   } catch (error) {
+    console.error('Erreur ajout feedback:', error);
     res.status(500).json({ message: error.message });
   }
 });

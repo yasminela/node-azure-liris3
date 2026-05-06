@@ -6,22 +6,15 @@ import Utilisateur from '../models/Utilisateur.js';
 
 const router = express.Router();
 
+// ========== ROUTES PORTEUR ==========
+
 // Mes projets (porteur)
 router.get('/mes-projets', auth, async (req, res) => {
   try {
     const projets = await Projet.find({ porteurId: req.user.id });
     res.json(projets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Tous les projets (admin)
-router.get('/tous', auth, isAdmin, async (req, res) => {
-  try {
-    const projets = await Projet.find().populate('porteurId', 'firstName lastName email telephone');
-    res.json(projets);
-  } catch (error) {
+    console.error('Erreur chargement projets porteur:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -52,11 +45,39 @@ router.post('/', auth, async (req, res) => {
 
     res.status(201).json(projet);
   } catch (error) {
+    console.error('Erreur création projet:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// ✅ VALIDER un projet (admin)
+// ========== ROUTES ADMIN ==========
+
+// Tous les projets (admin)
+router.get('/tous', auth, isAdmin, async (req, res) => {
+  try {
+    const projets = await Projet.find()
+      .populate('porteurId', 'firstName lastName email telephone')
+      .sort({ dateDebut: -1 });
+    res.json(projets);
+  } catch (error) {
+    console.error('Erreur chargement tous projets:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Projets en attente (admin)
+router.get('/en-attente', auth, isAdmin, async (req, res) => {
+  try {
+    const projets = await Projet.find({ statut: 'en_attente' })
+      .populate('porteurId', 'firstName lastName email telephone');
+    res.json(projets);
+  } catch (error) {
+    console.error('Erreur chargement projets en attente:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// PUT /api/projets/valider/:id - Valider un projet (admin)
 router.put('/valider/:id', auth, isAdmin, async (req, res) => {
   try {
     const { feedback } = req.body;
@@ -78,21 +99,56 @@ router.put('/valider/:id', auth, isAdmin, async (req, res) => {
     // Notifier le porteur
     await Notification.create({
       utilisateurId: projet.porteurId._id,
-      titre: ' Projet validé',
+      titre: '✅ Projet validé',
       message: `Votre projet "${projet.titre}" a été validé par l'administrateur.${feedback ? ` Feedback: ${feedback}` : ''}`,
       type: 'succes',
       estLue: false,
       lien: '/'
     });
 
-    res.json({ message: 'Projet validé avec succès', projet });
+    res.json({ success: true, message: 'Projet validé avec succès', projet });
   } catch (error) {
-    console.error('Erreur validation:', error);
+    console.error('Erreur validation projet:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-//  REJETER un projet (admin)
+// POST /api/projets/valider/:id - Support POST pour compatibilité frontend
+router.post('/valider/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { feedback } = req.body;
+    
+    const projet = await Projet.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'valide',
+        feedback: feedback || '',
+        dateValidation: new Date()
+      },
+      { new: true }
+    ).populate('porteurId', 'firstName lastName email');
+
+    if (!projet) {
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+
+    await Notification.create({
+      utilisateurId: projet.porteurId._id,
+      titre: '✅ Projet validé',
+      message: `Votre projet "${projet.titre}" a été validé par l'administrateur.${feedback ? ` Feedback: ${feedback}` : ''}`,
+      type: 'succes',
+      estLue: false,
+      lien: '/'
+    });
+
+    res.json({ success: true, message: 'Projet validé avec succès', projet });
+  } catch (error) {
+    console.error('Erreur validation projet:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// PUT /api/projets/rejeter/:id - Rejeter un projet (admin)
 router.put('/rejeter/:id', auth, isAdmin, async (req, res) => {
   try {
     const { feedback } = req.body;
@@ -118,16 +174,69 @@ router.put('/rejeter/:id', auth, isAdmin, async (req, res) => {
     // Notifier le porteur
     await Notification.create({
       utilisateurId: projet.porteurId._id,
-      titre: 'Projet non retenu',
+      titre: '❌ Projet non retenu',
       message: `Votre projet "${projet.titre}" n'a pas été retenu. Feedback: ${feedback}`,
       type: 'erreur',
       estLue: false,
       lien: '/'
     });
 
-    res.json({ message: 'Projet rejeté', projet });
+    res.json({ success: true, message: 'Projet rejeté', projet });
   } catch (error) {
-    console.error('Erreur rejet:', error);
+    console.error('Erreur rejet projet:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/projets/rejeter/:id - Support POST pour compatibilité frontend
+router.post('/rejeter/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { feedback } = req.body;
+    
+    if (!feedback) {
+      return res.status(400).json({ message: 'Un feedback est requis pour rejeter le projet' });
+    }
+
+    const projet = await Projet.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'rejete',
+        feedback: feedback,
+        dateRejet: new Date()
+      },
+      { new: true }
+    ).populate('porteurId', 'firstName lastName email');
+
+    if (!projet) {
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+    
+    await Notification.create({
+      utilisateurId: projet.porteurId._id,
+      titre: '❌ Projet non retenu',
+      message: `Votre projet "${projet.titre}" n'a pas été retenu. Feedback: ${feedback}`,
+      type: 'erreur',
+      estLue: false,
+      lien: '/'
+    });
+
+    res.json({ success: true, message: 'Projet rejeté', projet });
+  } catch (error) {
+    console.error('Erreur rejet projet:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Détail d'un projet
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const projet = await Projet.findById(req.params.id).populate('porteurId', 'firstName lastName email telephone');
+    if (!projet) {
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+    res.json(projet);
+  } catch (error) {
+    console.error('Erreur chargement projet:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -141,6 +250,7 @@ router.delete('/:id', auth, isAdmin, async (req, res) => {
     }
     res.json({ message: 'Projet supprimé avec succès' });
   } catch (error) {
+    console.error('Erreur suppression projet:', error);
     res.status(500).json({ message: error.message });
   }
 });

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faFileAlt, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faFileAlt, faSpinner, faDownload, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function ValidationDocument({ onValidate }) {
   const { darkMode } = useTheme();
@@ -10,6 +10,8 @@ function ValidationDocument({ onValidate }) {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState({});
   const [validating, setValidating] = useState({});
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   useEffect(() => {
     loadSoumissions();
@@ -21,7 +23,7 @@ function ValidationDocument({ onValidate }) {
       const res = await api.get('/etapes/soumissions');
       setSoumissions(res.data || []);
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur chargement:', error);
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ function ValidationDocument({ onValidate }) {
     try {
       if (estValide) {
         await api.put(`/etapes/valider/${id}`, { commentaire });
-        alert('✅ Document validé');
+        alert('✅ Document validé avec succès');
       } else {
         await api.put(`/etapes/refuser/${id}`, { commentaire });
         alert('❌ Document refusé');
@@ -55,6 +57,17 @@ function ValidationDocument({ onValidate }) {
     } finally {
       setValidating(prev => ({ ...prev, [id]: false }));
     }
+  };
+
+  const handleViewDocument = (soumission) => {
+    setSelectedDocument(soumission);
+    setShowDocumentModal(true);
+  };
+
+  const getDocumentUrl = (documentPath) => {
+    if (!documentPath) return null;
+    if (documentPath.startsWith('http')) return documentPath;
+    return `http://localhost:5001/${documentPath}`;
   };
 
   const styles = {
@@ -96,6 +109,20 @@ function ValidationDocument({ onValidate }) {
       color: darkMode ? '#94a3b8' : '#64748b',
       marginTop: '4px'
     },
+    documentLink: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      padding: '8px 16px',
+      borderRadius: '10px',
+      color: '#667eea',
+      cursor: 'pointer',
+      textDecoration: 'none',
+      fontSize: '13px',
+      marginTop: '12px',
+      marginBottom: '16px'
+    },
     textarea: {
       width: '100%',
       padding: '12px',
@@ -104,7 +131,11 @@ function ValidationDocument({ onValidate }) {
       background: darkMode ? '#0f172a' : 'white',
       color: darkMode ? '#f1f5f9' : '#1e293b',
       marginBottom: '12px',
-      fontSize: '14px'
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      resize: 'vertical',
+      minHeight: '80px',
+      maxHeight: '150px'
     },
     buttonGroup: { display: 'flex', gap: '12px' },
     btnValid: {
@@ -134,6 +165,49 @@ function ValidationDocument({ onValidate }) {
     disabledBtn: {
       opacity: 0.6,
       cursor: 'not-allowed'
+    },
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    },
+    modalContent: {
+      background: darkMode ? '#1e293b' : 'white',
+      borderRadius: '20px',
+      padding: '24px',
+      maxWidth: '90%',
+      width: '800px',
+      maxHeight: '80vh',
+      overflow: 'auto'
+    },
+    modalTitle: {
+      fontSize: '20px',
+      fontWeight: 'bold',
+      marginBottom: '16px',
+      color: darkMode ? '#ffffff' : '#1e293b'
+    },
+    iframe: {
+      width: '100%',
+      height: '500px',
+      border: 'none',
+      borderRadius: '10px'
+    },
+    closeBtn: {
+      marginTop: '16px',
+      padding: '10px 20px',
+      background: '#667eea',
+      color: 'white',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      width: '100%'
     }
   };
 
@@ -165,13 +239,34 @@ function ValidationDocument({ onValidate }) {
           <div key={s._id} style={styles.soumissionCard}>
             <div style={styles.soumissionTitle}>{s.titre}</div>
             <div style={styles.soumissionMeta}>
-              Porteur: {s.porteurId?.firstName} {s.porteurId?.lastName}
+              Porteur: {s.porteurId?.firstName} {s.porteurId?.lastName} | {s.porteurId?.email}
             </div>
             <div style={styles.soumissionMeta}>
-              Soumis le: {new Date(s.dateSoumission).toLocaleDateString()}
+              Soumis le: {new Date(s.dateSoumission).toLocaleDateString('fr-FR')}
             </div>
+            
+            {/* Lien pour consulter le document */}
+            {s.documentUrl && (
+              <div 
+                style={styles.documentLink} 
+                onClick={() => handleViewDocument(s)}
+              >
+                <FontAwesomeIcon icon={faEye} />
+                Consulter le document soumis
+                <FontAwesomeIcon icon={faDownload} style={{ marginLeft: '8px' }} />
+              </div>
+            )}
+
             {s.commentairePorteur && (
-              <div style={{ marginTop: '10px', padding: '10px', background: darkMode ? '#0f172a' : '#f8fafc', borderRadius: '10px', fontSize: '13px' }}>
+              <div style={{ 
+                marginTop: '10px', 
+                padding: '10px', 
+                background: darkMode ? '#0f172a' : '#f8fafc', 
+                borderRadius: '10px', 
+                fontSize: '13px',
+                wordWrap: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}>
                 <strong>💬 Commentaire du porteur:</strong> {s.commentairePorteur}
               </div>
             )}
@@ -181,7 +276,7 @@ function ValidationDocument({ onValidate }) {
               value={feedback[s._id] || ''}
               onChange={(e) => setFeedback({ ...feedback, [s._id]: e.target.value })}
               style={styles.textarea}
-              rows="2"
+              rows="3"
             />
             
             <div style={styles.buttonGroup}>
@@ -210,6 +305,31 @@ function ValidationDocument({ onValidate }) {
             </div>
           </div>
         ))
+      )}
+
+      {/* Modal pour visualiser le document */}
+      {showDocumentModal && selectedDocument && (
+        <div style={styles.modalOverlay} onClick={() => setShowDocumentModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalTitle}>
+              <FontAwesomeIcon icon={faFileAlt} style={{ marginRight: '8px' }} />
+              {selectedDocument.titre}
+            </div>
+            <div style={{ marginBottom: '16px', color: darkMode ? '#94a3b8' : '#64748b' }}>
+              Soumis par: {selectedDocument.porteurId?.firstName} {selectedDocument.porteurId?.lastName}
+            </div>
+            {selectedDocument.documentUrl && (
+              <iframe
+                src={getDocumentUrl(selectedDocument.documentUrl)}
+                style={styles.iframe}
+                title="Document"
+              />
+            )}
+            <button style={styles.closeBtn} onClick={() => setShowDocumentModal(false)}>
+              Fermer
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

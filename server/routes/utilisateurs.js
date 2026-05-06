@@ -162,6 +162,29 @@ router.put('/:id', auth, isAdmin, async (req, res) => {
   }
 });
 
+// GET /api/utilisateurs/:id - Récupérer un utilisateur par ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const utilisateur = await Utilisateur.findById(req.params.id).select('-password');
+    if (!utilisateur) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+    
+    // Vérifier les droits (admin ou soi-même)
+    const isAdminUser = req.user.role === 'admin';
+    const isSelf = req.user.id === req.params.id;
+    
+    if (!isAdminUser && !isSelf) {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
+    
+    res.json(utilisateur);
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Supprimer un utilisateur (admin)
 router.delete('/:id', auth, isAdmin, async (req, res) => {
   try {

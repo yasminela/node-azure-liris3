@@ -7,6 +7,7 @@ import CreationPorteur from '../composants/CreationPorteur';
 import EnvoiTache from '../composants/EnvoiTache';
 import ModifierPorteur from '../composants/ModifierPorteur';
 import ValidationDocument from '../composants/ValidationDocument';
+import ValidationProjet from '../composants/ValidationProjet';
 import AssignerEtapes from '../composants/AssignerEtapes';
 import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import ScoresPorteurs from '../composants/ScoresPorteurs';
@@ -20,7 +21,7 @@ import {
   faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
   faUserPlus, faPaperPlane, faTasks, faUserCircle, 
   faExclamationTriangle, faEdit, faTrash, faCheck, faTimes,
-  faTachometerAlt, faSpinner
+  faTachometerAlt, faSpinner, faComments, faClock
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordAdmin({ user, onLogout }) {
@@ -32,11 +33,14 @@ function TableauBordAdmin({ user, onLogout }) {
   const [showEnvoiTache, setShowEnvoiTache] = useState(false);
   const [showEditPorteur, setShowEditPorteur] = useState(false);
   const [showAssignerEtapes, setShowAssignerEtapes] = useState(false);
+  const [showValidationProjet, setShowValidationProjet] = useState(false);
   const [selectedPorteur, setSelectedPorteur] = useState(null);
+  const [selectedProjet, setSelectedProjet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(user);
   const [toast, setToast] = useState(null);
+  const [feedbackText, setFeedbackText] = useState({});
 
   const colors = {
     primary: '#9333ea',
@@ -83,7 +87,7 @@ function TableauBordAdmin({ user, onLogout }) {
         api.get('/etapes/soumissions')
       ]);
       setStats({
-        projets: projetsRes.data?.length || 0,
+        projets: projetsRes.data?.filter(p => p.statut === 'en_attente').length || 0,
         porteurs: utilisateursRes.data?.filter(u => u.role === 'porteur').length || 0,
         soumissions: soumissionsRes.data?.length || 0
       });
@@ -91,48 +95,51 @@ function TableauBordAdmin({ user, onLogout }) {
       setProjets(projetsRes.data || []);
     } catch (error) {
       console.error('Erreur chargement:', error);
+      showToastMessage('error', 'Erreur de chargement des données');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeletePorteur = async (id) => {
-    if (window.confirm('Supprimer ce porteur ?')) {
+    if (window.confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce porteur ?')) {
       try {
         await api.delete(`/utilisateurs/${id}`);
         await loadAllData();
-        showToastMessage('success', '✅ Porteur supprimé');
+        showToastMessage('success', '✅ Porteur supprimé avec succès');
       } catch (error) {
         showToastMessage('error', '❌ Erreur lors de la suppression');
       }
     }
   };
 
-  const handleValidateProjet = async (id, statut, feedback) => {
-    try {
-      if (statut === 'valide') {
-        await api.put(`/projets/valider/${id}`, { feedback });
-        showToastMessage('success', '✅ Projet validé');
-      } else {
-        await api.put(`/projets/rejeter/${id}`, { feedback });
-        showToastMessage('error', '❌ Projet rejeté');
-      }
-      await loadAllData();
-    } catch (error) {
-      showToastMessage('error', 'Erreur: ' + (error.response?.data?.message || error.message));
-    }
+  const handleOpenValidationProjet = (projet) => {
+    setSelectedProjet(projet);
+    setShowValidationProjet(true);
   };
 
   const getStatutBadge = (statut) => {
     const badges = {
-      en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faExclamationTriangle },
+      en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faClock },
       valide: { background: '#d1fae5', color: '#059669', text: '✅ Validé', icon: faCheck },
-      rejete: { background: '#fee2e2', color: '#dc2626', text: '❌ Rejeté', icon: faTimes }
+      validee: { background: '#d1fae5', color: '#059669', text: '✅ Validé', icon: faCheck },
+      rejete: { background: '#fee2e2', color: '#dc2626', text: '❌ Rejeté', icon: faTimes },
+      refusee: { background: '#fee2e2', color: '#dc2626', text: '❌ Refusé', icon: faTimes },
+      soumise: { background: '#dbeafe', color: '#2563eb', text: '📤 En attente', icon: faFileAlt }
     };
     const b = badges[statut] || { background: '#f3f4f6', color: '#374151', text: statut, icon: faTasks };
     return (
-      <span style={{ background: b.background, color: b.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-        <FontAwesomeIcon icon={b.icon} size="sm" color={b.color} />
+      <span style={{ 
+        background: b.background, 
+        color: b.color, 
+        padding: '4px 12px', 
+        borderRadius: '20px', 
+        fontSize: '12px', 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        gap: '6px' 
+      }}>
+        <FontAwesomeIcon icon={b.icon} size="sm" />
         {b.text}
       </span>
     );
@@ -151,7 +158,6 @@ function TableauBordAdmin({ user, onLogout }) {
           height: 'calc(100vh - 70px)',
           gap: '24px'
         }}>
-          {/* Logo animé */}
           <div style={{
             width: '80px',
             height: '80px',
@@ -164,8 +170,6 @@ function TableauBordAdmin({ user, onLogout }) {
           }}>
             <img src="/logo-incubiny.png" alt="Incubiny" style={{ width: '45px', height: '45px', filter: 'brightness(0) invert(1)' }} />
           </div>
-          
-          {/* Spinner */}
           <div style={{
             width: '60px',
             height: '60px',
@@ -174,14 +178,10 @@ function TableauBordAdmin({ user, onLogout }) {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          
-          {/* Message */}
           <p style={{ color: darkMode ? '#94a3b8' : '#475569', fontSize: '14px' }}>
             <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
             Chargement de votre tableau de bord...
           </p>
-          
-          {/* Barre de progression animée */}
           <div style={{
             width: '250px',
             height: '3px',
@@ -200,15 +200,8 @@ function TableauBordAdmin({ user, onLogout }) {
         <style dangerouslySetInnerHTML={{
           __html: `
             @keyframes spin { 100% { transform: rotate(360deg); } }
-            @keyframes pulse { 
-              0%, 100% { transform: scale(1); } 
-              50% { transform: scale(1.1); } 
-            }
-            @keyframes loading { 
-              0% { width: 0%; } 
-              50% { width: 80%; } 
-              100% { width: 100%; } 
-            }
+            @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+            @keyframes loading { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
           `
         }} />
       </div>
@@ -243,7 +236,8 @@ function TableauBordAdmin({ user, onLogout }) {
       marginBottom: '4px', 
       background: darkMode ? 'linear-gradient(135deg, #f1f5f9, #cbd5e1)' : colors.gradient1,
       WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text'
     },
     profileEmail: { 
       color: darkMode ? '#94a3b8' : '#475569', 
@@ -284,7 +278,8 @@ function TableauBordAdmin({ user, onLogout }) {
       marginBottom: '8px', 
       background: darkMode ? 'linear-gradient(135deg, #c084fc, #f472b6, #22d3ee)' : colors.gradient1,
       WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text'
     },
     statLabel: { 
       fontSize: 'clamp(12px, 3vw, 14px)', 
@@ -331,7 +326,7 @@ function TableauBordAdmin({ user, onLogout }) {
       borderLeft: `4px solid ${colors.primary}`, 
       paddingLeft: '16px' 
     },
-    table: { width: '100%', borderCollapse: 'collapse', marginTop: '15px', overflowX: 'auto' },
+    table: { width: '100%', borderCollapse: 'collapse', marginTop: '15px' },
     th: { 
       padding: 'clamp(10px, 2vw, 14px)', 
       textAlign: 'left', 
@@ -348,9 +343,8 @@ function TableauBordAdmin({ user, onLogout }) {
       color: darkMode ? '#f1f5f9' : '#1e293b'
     },
     btnEdit: { background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
-    btnDelete: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
-    btnValidate: { background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
-    btnReject: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    btnDelete: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
+    btnValidate: { background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '500' },
     emptyState: { textAlign: 'center', padding: 'clamp(30px, 8vw, 48px)', color: darkMode ? '#94a3b8' : '#475569' },
     tabsContainer: { 
       display: 'flex', 
@@ -398,7 +392,22 @@ function TableauBordAdmin({ user, onLogout }) {
       textAlign: 'center',
       color: darkMode ? '#94a3b8' : '#475569',
       marginTop: '8px'
-    }
+    },
+    projetCard: {
+      background: darkMode ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.7)',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '12px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: '16px',
+      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(147, 51, 234, 0.15)'}`
+    },
+    projetInfo: { flex: 1 },
+    projetTitre: { fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: darkMode ? '#f1f5f9' : '#1e293b' },
+    projetMeta: { fontSize: '14px', color: darkMode ? '#94a3b8' : '#64748b' }
   };
 
   return (
@@ -430,6 +439,7 @@ function TableauBordAdmin({ user, onLogout }) {
             transform: translateY(-2px);
           }
           .stat-card:hover, .program-card:hover { transform: translateY(-5px); }
+          .overflow-x-auto { overflow-x: auto; }
         `
       }} />
 
@@ -472,7 +482,7 @@ function TableauBordAdmin({ user, onLogout }) {
             <FontAwesomeIcon icon={faUsers} /> Porteurs ({porteurs.length})
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'projets')} onClick={() => setActiveTab('projets')}>
-            <FontAwesomeIcon icon={faBuilding} /> Projets à valider
+            <FontAwesomeIcon icon={faBuilding} /> Projets à valider ({stats.projets})
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
             <FontAwesomeIcon icon={faFileAlt} /> Soumissions ({stats.soumissions})
@@ -489,21 +499,21 @@ function TableauBordAdmin({ user, onLogout }) {
         {activeTab === 'dashboard' && (
           <>
             <div style={styles.statsContainer}>
-              <div className="stat-card" style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('projets')}>
                 <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.primary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <FontAwesomeIcon icon={faBuilding} size="2x" color={colors.primary} />
                 </div>
                 <div style={styles.statNumber}>{stats.projets}</div>
-                <div style={styles.statLabel}>Projets</div>
+                <div style={styles.statLabel}>Projets en attente</div>
               </div>
-              <div className="stat-card" style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('porteurs')}>
                 <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.secondary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <FontAwesomeIcon icon={faUsers} size="2x" color={colors.secondary} />
                 </div>
                 <div style={styles.statNumber}>{stats.porteurs}</div>
-                <div style={styles.statLabel}>Porteurs</div>
+                <div style={styles.statLabel}>Porteurs actifs</div>
               </div>
-              <div className="stat-card" style={styles.statCard}>
+              <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('soumissions')}>
                 <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#f59e0b15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <FontAwesomeIcon icon={faExclamationTriangle} size="2x" color="#f59e0b" />
                 </div>
@@ -532,13 +542,29 @@ function TableauBordAdmin({ user, onLogout }) {
         {/* Porteurs Content */}
         {activeTab === 'porteurs' && (
           <div style={styles.infoCard}>
-            <div style={styles.sectionTitle}><FontAwesomeIcon icon={faUsers} /> Liste des porteurs</div>
+            <div style={styles.sectionTitle}>
+              <FontAwesomeIcon icon={faUsers} /> Liste des porteurs
+            </div>
             {porteurs.length === 0 ? (
-              <div style={styles.emptyState}>Aucun porteur créé</div>
+              <div style={styles.emptyState}>
+                <FontAwesomeIcon icon={faUsers} size="3x" style={{ opacity: 0.3, marginBottom: '16px' }} />
+                <p>Aucun porteur créé</p>
+                <button className="btn-shine" onClick={() => setShowCreationPorteur(true)} style={{ ...styles.btnValidate, marginTop: '16px' }}>
+                  <FontAwesomeIcon icon={faUserPlus} /> Créer un porteur
+                </button>
+              </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div className="overflow-x-auto">
                 <table style={styles.table}>
-                  <thead><tr><th style={styles.th}>Nom</th><th style={styles.th}>Email</th><th style={styles.th}>Téléphone</th><th style={styles.th}>Projet</th><th style={styles.th}>Actions</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Nom</th>
+                      <th style={styles.th}>Email</th>
+                      <th style={styles.th}>Téléphone</th>
+                      <th style={styles.th}>Projet</th>
+                      <th style={styles.th}>Actions</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {porteurs.map(p => (
                       <tr key={p._id}>
@@ -563,35 +589,43 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
-        {/* Projets Content */}
+        {/* Projets Content - VERSION CORRIGEE */}
         {activeTab === 'projets' && (
           <div style={styles.infoCard}>
-            <div style={styles.sectionTitle}><FontAwesomeIcon icon={faBuilding} /> Projets à valider</div>
+            <div style={styles.sectionTitle}>
+              <FontAwesomeIcon icon={faBuilding} /> Projets en attente de validation
+            </div>
             {projets.filter(p => p.statut === 'en_attente').length === 0 ? (
-              <div style={styles.emptyState}>Aucun projet en attente</div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={styles.table}>
-                  <thead><tr><th style={styles.th}>Projet</th><th style={styles.th}>Porteur</th><th style={styles.th}>Statut</th><th style={styles.th}>Actions</th></tr></thead>
-                  <tbody>
-                    {projets.filter(p => p.statut === 'en_attente').map(p => (
-                      <tr key={p._id}>
-                        <td style={styles.td}><strong>{p.titre || p.nomProjet}</strong></td>
-                        <td style={styles.td}>{p.porteurId?.firstName} {p.porteurId?.lastName}</td>
-                        <td style={styles.td}>{getStatutBadge(p.statut)}</td>
-                        <td style={styles.td}>
-                          <button className="btn-shine" onClick={() => handleValidateProjet(p._id, 'valide', '')} style={styles.btnValidate}>
-                            <FontAwesomeIcon icon={faCheck} size="sm" /> Valider
-                          </button>
-                          <button className="btn-shine" onClick={() => handleValidateProjet(p._id, 'rejete', 'Projet non conforme')} style={styles.btnReject}>
-                            <FontAwesomeIcon icon={faTimes} size="sm" /> Rejeter
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={styles.emptyState}>
+                <FontAwesomeIcon icon={faCheck} size="3x" style={{ opacity: 0.3, marginBottom: '16px', color: '#10b981' }} />
+                <p>Aucun projet en attente de validation</p>
+                <p style={{ fontSize: '13px', marginTop: '8px' }}>Tous les projets ont été traités</p>
               </div>
+            ) : (
+              projets.filter(p => p.statut === 'en_attente').map(p => (
+                <div key={p._id} style={styles.projetCard}>
+                  <div style={styles.projetInfo}>
+                    <div style={styles.projetTitre}>
+                      <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: colors.primary }} />
+                      {p.titre || p.nomProjet}
+                    </div>
+                    <div style={styles.projetMeta}>
+                      <FontAwesomeIcon icon={faUsers} style={{ marginRight: '6px' }} />
+                      Porteur: {p.porteurId?.firstName} {p.porteurId?.lastName}
+                      {p.porteurId?.email && <span style={{ marginLeft: '16px' }}>📧 {p.porteurId.email}</span>}
+                    </div>
+                    {p.description && (
+                      <div style={{ ...styles.projetMeta, marginTop: '8px' }}>
+                        {p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '8px' }}>{getStatutBadge(p.statut)}</div>
+                  </div>
+                  <button className="btn-shine" onClick={() => handleOpenValidationProjet(p)} style={styles.btnValidate}>
+                    <FontAwesomeIcon icon={faCheck} size="sm" /> Valider / Rejeter
+                  </button>
+                </div>
+              ))
             )}
           </div>
         )}
@@ -609,12 +643,50 @@ function TableauBordAdmin({ user, onLogout }) {
       <PiedDePage />
 
       {/* Modals */}
-      {showCreationPorteur && <CreationPorteur onClose={() => setShowCreationPorteur(false)} onSuccess={() => { loadAllData(); }} />}
-      {showEnvoiTache && <EnvoiTache onClose={() => setShowEnvoiTache(false)} onSuccess={loadAllData} />}
-      {showAssignerEtapes && <AssignerEtapes onClose={() => setShowAssignerEtapes(false)} onSuccess={loadAllData} />}
-      {showEditPorteur && selectedPorteur && <ModifierPorteur porteur={selectedPorteur} onClose={() => { setShowEditPorteur(false); setSelectedPorteur(null); }} onSuccess={() => { loadAllData(); }} />}
+      {showCreationPorteur && (
+        <CreationPorteur 
+          onClose={() => setShowCreationPorteur(false)} 
+          onSuccess={() => { loadAllData(); setShowCreationPorteur(false); }} 
+        />
+      )}
       
-      {toast && <ToastNotification type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      {showEnvoiTache && (
+        <EnvoiTache 
+          onClose={() => setShowEnvoiTache(false)} 
+          onSuccess={() => { loadAllData(); setShowEnvoiTache(false); }} 
+        />
+      )}
+      
+      {showAssignerEtapes && (
+        <AssignerEtapes 
+          onClose={() => setShowAssignerEtapes(false)} 
+          onSuccess={() => { loadAllData(); setShowAssignerEtapes(false); }} 
+        />
+      )}
+      
+      {showEditPorteur && selectedPorteur && (
+        <ModifierPorteur 
+          porteur={selectedPorteur} 
+          onClose={() => { setShowEditPorteur(false); setSelectedPorteur(null); }} 
+          onSuccess={() => { loadAllData(); setShowEditPorteur(false); }} 
+        />
+      )}
+      
+      {showValidationProjet && selectedProjet && (
+        <ValidationProjet 
+          projet={selectedProjet} 
+          onClose={() => { setShowValidationProjet(false); setSelectedProjet(null); }} 
+          onSuccess={() => { loadAllData(); setShowValidationProjet(false); setSelectedProjet(null); }} 
+        />
+      )}
+      
+      {toast && (
+        <ToastNotification 
+          type={toast.type} 
+          message={toast.message} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

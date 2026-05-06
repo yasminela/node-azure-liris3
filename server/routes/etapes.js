@@ -25,6 +25,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// ========== ROUTES ADMIN ==========
+
 // Assigner les étapes Early-Stage (admin)
 router.post('/assigner-early-stage', auth, isAdmin, async (req, res) => {
   try {
@@ -65,35 +67,282 @@ router.post('/assigner-early-stage', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Soumettre une étape (porteur)
-router.post('/soumettre', auth, upload.single('fichier'), async (req, res) => {
+// GET /api/etapes/soumissions - Soumissions en attente (admin)
+router.get('/soumissions', auth, isAdmin, async (req, res) => {
   try {
-    const { etapeId, commentaire } = req.body;
-    let documentUrl = req.file ? req.file.path : null;
+    const soumissions = await Etape.find({ statut: 'soumise' })
+      .populate('porteurId', 'firstName lastName email');
+    res.json(soumissions);
+  } catch (error) {
+    console.error('Erreur chargement soumissions:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// PUT /api/etapes/valider/:id - Valider une étape (admin)
+router.put('/valider/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { commentaire } = req.body;
     
     const etape = await Etape.findByIdAndUpdate(
-      etapeId,
-      { documentUrl, commentairePorteur: commentaire, statut: 'soumise', dateSoumission: new Date() },
+      req.params.id,
+      { 
+        statut: 'validee', 
+        commentaireAdmin: commentaire, 
+        dateValidation: new Date() 
+      },
       { new: true }
     );
     
-    if (!etape) return res.status(404).json({ message: 'Étape non trouvée' });
+    if (!etape) {
+      return res.status(404).json({ message: 'Étape non trouvée' });
+    }
     
+    await Notification.create({
+      utilisateurId: etape.porteurId,
+      titre: '✅ Étape validée',
+      message: `Votre étape "${etape.titre}" a été validée.${commentaire ? ` Feedback: ${commentaire}` : ''}`,
+      type: 'succes',
+      estLue: false,
+      lien: '/'
+    });
+    
+    res.json({ success: true, message: 'Étape validée avec succès', etape });
+  } catch (error) {
+    console.error('Erreur validation:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/etapes/valider/:id - Support POST pour compatibilité frontend
+router.post('/valider/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { commentaire } = req.body;
+    
+    const etape = await Etape.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'validee', 
+        commentaireAdmin: commentaire, 
+        dateValidation: new Date() 
+      },
+      { new: true }
+    );
+    
+    if (!etape) {
+      return res.status(404).json({ message: 'Étape non trouvée' });
+    }
+    
+    await Notification.create({
+      utilisateurId: etape.porteurId,
+      titre: '✅ Étape validée',
+      message: `Votre étape "${etape.titre}" a été validée.${commentaire ? ` Feedback: ${commentaire}` : ''}`,
+      type: 'succes',
+      estLue: false,
+      lien: '/'
+    });
+    
+    res.json({ success: true, message: 'Étape validée avec succès', etape });
+  } catch (error) {
+    console.error('Erreur validation:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// PUT /api/etapes/refuser/:id - Refuser une étape (admin)
+router.put('/refuser/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { commentaire } = req.body;
+    
+    if (!commentaire) {
+      return res.status(400).json({ message: 'Un commentaire est requis pour le refus' });
+    }
+    
+    const etape = await Etape.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'refusee', 
+        commentaireAdmin: commentaire, 
+        dateValidation: new Date() 
+      },
+      { new: true }
+    );
+    
+    if (!etape) {
+      return res.status(404).json({ message: 'Étape non trouvée' });
+    }
+    
+    await Notification.create({
+      utilisateurId: etape.porteurId,
+      titre: '⚠️ Document à reprendre',
+      message: `Votre document "${etape.titre}" nécessite des modifications. Feedback: ${commentaire}`,
+      type: 'warning',
+      estLue: false,
+      lien: '/'
+    });
+    
+    res.json({ success: true, message: 'Étape refusée', etape });
+  } catch (error) {
+    console.error('Erreur refus:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/etapes/refuser/:id - Support POST pour compatibilité frontend
+router.post('/refuser/:id', auth, isAdmin, async (req, res) => {
+  try {
+    const { commentaire } = req.body;
+    
+    if (!commentaire) {
+      return res.status(400).json({ message: 'Un commentaire est requis pour le refus' });
+    }
+    
+    const etape = await Etape.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'refusee', 
+        commentaireAdmin: commentaire, 
+        dateValidation: new Date() 
+      },
+      { new: true }
+    );
+    
+    if (!etape) {
+      return res.status(404).json({ message: 'Étape non trouvée' });
+    }
+    
+    await Notification.create({
+      utilisateurId: etape.porteurId,
+      titre: '⚠️ Document à reprendre',
+      message: `Votre document "${etape.titre}" nécessite des modifications. Feedback: ${commentaire}`,
+      type: 'warning',
+      estLue: false,
+      lien: '/'
+    });
+    
+    res.json({ success: true, message: 'Étape refusée', etape });
+  } catch (error) {
+    console.error('Erreur refus:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ========== ROUTES PORTEUR ==========
+
+// Soumettre une étape (porteur
+
+// POST /api/etapes/soumettre
+// POST /api/etapes/soumettre-bmc
+router.post('/soumettre-bmc', auth, upload.single('fichier'), async (req, res) => {
+  console.log('📤 Soumission BMC reçue');
+  console.log('Fichier:', req.file?.originalname);
+  console.log('Body:', req.body);
+  
+  try {
+    const { etapeId, commentaire } = req.body;
+    const fichier = req.file;
+    
+    if (!fichier) {
+      return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
+    }
+    
+    if (fichier.mimetype !== 'application/pdf') {
+      return res.status(400).json({ success: false, message: 'Le BMC doit être au format PDF' });
+    }
+    
+    // Mettre à jour l'étape
+    const etape = await Etape.findByIdAndUpdate(
+      etapeId,
+      {
+        documentUrl: fichier.path,
+        documentNom: fichier.originalname,
+        commentairePorteur: commentaire || '',
+        statut: 'soumise',
+        dateSoumission: new Date()
+      },
+      { new: true }
+    );
+    
+    if (!etape) {
+      return res.status(404).json({ success: false, message: 'Étape non trouvée' });
+    }
+    
+    let analyseResult = null;
+    
+    // Analyser le BMC avec l'IA
+    try {
+      const { analyserBMCPDF } = await import('../services/aiService.js');
+      const AIAnalysis = (await import('../models/AIAnalysis.js')).default;
+      
+      console.log('🤖 Lancement de l\'analyse IA du BMC...');
+      const analyse = await analyserBMCPDF(fichier.path);
+      
+      if (!analyse.erreur) {
+        console.log('✅ Analyse IA terminée - Score:', analyse.scoreImpact);
+        
+        // Sauvegarder l'analyse
+        const nouvelleAnalyse = await AIAnalysis.create({
+          porteurId: req.user.id,
+          projetId: etape.projetId,
+          fichierBMC: fichier.originalname,
+          cheminFichier: fichier.path,
+          scoreImpact: analyse.scoreImpact,
+          niveauImpact: analyse.niveauImpact,
+          secteur: analyse.secteur,
+          recommandations: analyse.recommandations || [],
+          formations: analyse.formations || [],
+          evenements: analyse.evenements || [],
+          feedback: analyse.feedback,
+          dateAnalyse: new Date()
+        });
+        
+        analyseResult = {
+          analyseId: nouvelleAnalyse._id,
+          scoreImpact: analyse.scoreImpact,
+          niveauImpact: analyse.niveauImpact,
+          feedback: analyse.feedback,
+          recommandations: analyse.recommandations || [],
+          formationsCount: analyse.formations?.length || 0
+        };
+        
+        // Notifier le porteur
+        await Notification.create({
+          utilisateurId: req.user.id,
+          titre: '🤖 Analyse BMC terminée',
+          message: `Votre Business Model Canvas a été analysé. Score: ${analyse.scoreImpact}/100. ${analyse.recommandations?.length || 0} recommandations disponibles.`,
+          type: 'succes',
+          estLue: false,
+          lien: '/#analyses'
+        });
+      } else {
+        console.log('⚠️ Erreur analyse IA:', analyse.erreur);
+      }
+    } catch (iaError) {
+      console.error('❌ Erreur analyse IA:', iaError);
+    }
+    
+    // Notifier les admins
     const admins = await Utilisateur.find({ role: 'admin' });
     for (const admin of admins) {
       await Notification.create({
         utilisateurId: admin._id,
-        titre: '📄 Nouvelle soumission',
-        message: `L'étape "${etape.titre}" a été soumise`,
+        titre: '📊 Nouvelle analyse BMC',
+        message: `${req.user.firstName} ${req.user.lastName} a soumis son BMC. Score: ${analyseResult?.scoreImpact || 'En attente'}/100`,
         type: 'info',
         estLue: false,
-        lien: '/admin#soumissions'
+        lien: '/admin#analyses'
       });
     }
     
-    res.json({ message: 'Étape soumise avec succès', etape });
+    res.json({ 
+      success: true, 
+      message: 'BMC soumis avec succès',
+      analyseIA: analyseResult
+    });
+    
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('❌ Erreur soumission BMC:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -107,7 +356,7 @@ router.get('/mes-etapes', auth, async (req, res) => {
   }
 });
 
-// Mes soumissions (porteur) - ROUTE AJOUTÉE
+// Mes soumissions (porteur)
 router.get('/mes-soumissions', auth, async (req, res) => {
   try {
     const soumissions = await Etape.find({ 
@@ -120,61 +369,12 @@ router.get('/mes-soumissions', auth, async (req, res) => {
   }
 });
 
-// Soumissions en attente (admin)
-router.get('/soumissions', auth, isAdmin, async (req, res) => {
+// Détail d'une étape
+router.get('/:id', auth, async (req, res) => {
   try {
-    const soumissions = await Etape.find({ statut: 'soumise' }).populate('porteurId', 'firstName lastName email');
-    res.json(soumissions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Valider une étape (admin)
-router.put('/valider/:id', auth, isAdmin, async (req, res) => {
-  try {
-    const { commentaire } = req.body;
-    const etape = await Etape.findByIdAndUpdate(
-      req.params.id,
-      { statut: 'validee', commentaireAdmin: commentaire, dateValidation: new Date() },
-      { new: true }
-    );
-    
-    await Notification.create({
-      utilisateurId: etape.porteurId,
-      titre: '✅ Étape validée',
-      message: `Votre étape "${etape.titre}" a été validée.`,
-      type: 'succes',
-      estLue: false,
-      lien: '/'
-    });
-    
-    res.json({ message: 'Étape validée', etape });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Refuser une étape (admin)
-router.put('/refuser/:id', auth, isAdmin, async (req, res) => {
-  try {
-    const { commentaire } = req.body;
-    const etape = await Etape.findByIdAndUpdate(
-      req.params.id,
-      { statut: 'refusee', commentaireAdmin: commentaire, dateValidation: new Date() },
-      { new: true }
-    );
-    
-    await Notification.create({
-      utilisateurId: etape.porteurId,
-      titre: '⚠️ Étape à reprendre',
-      message: `Votre étape "${etape.titre}" nécessite des modifications. Feedback: ${commentaire}`,
-      type: 'erreur',
-      estLue: false,
-      lien: '/'
-    });
-    
-    res.json({ message: 'Étape refusée', etape });
+    const etape = await Etape.findById(req.params.id);
+    if (!etape) return res.status(404).json({ message: 'Étape non trouvée' });
+    res.json(etape);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

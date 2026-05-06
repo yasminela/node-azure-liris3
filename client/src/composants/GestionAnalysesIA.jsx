@@ -3,200 +3,89 @@ import api from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faBrain, faUpload, faSpinner, faChartLine, 
-  faCheckCircle, faInfoCircle,
-  faFilePdf, faTrashAlt, faDownload,
-  faCalendarAlt, faGraduationCap
+  faChartLine, faEye, faSpinner, faComment, 
+  faCheckCircle, faInfoCircle, faLightbulb,
+  faDownload, faFileAlt, faRobot, faUserCheck,
+  faCalendar, faClock, faStar, faTrophy,
+  faUpload, faFilePdf, faCheck, faTimes,
+  faArrowRight, faThumbsUp, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 
 function GestionAnalysesIA() {
   const { darkMode } = useTheme();
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [analyses, setAnalyses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [historique, setHistorique] = useState([]);
-  const [loadingHistorique, setLoadingHistorique] = useState(false);
-  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [selectedDetails, setSelectedDetails] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
+  // État pour l'upload
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [analyseResult, setAnalyseResult] = useState(null);
+  const [showAnalyseModal, setShowAnalyseModal] = useState(false);
 
   useEffect(() => {
-    loadHistorique();
+    loadAnalyses();
   }, []);
 
-  const loadHistorique = async () => {
-    setLoadingHistorique(true);
+  const loadAnalyses = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await api.get('/ai/mes-analyses');
-      setHistorique(res.data || []);
+      if (res.data && Array.isArray(res.data)) {
+        setAnalyses(res.data);
+      } else {
+        setAnalyses([]);
+      }
     } catch (error) {
-      console.error('Erreur chargement historique:', error);
+      console.error('Erreur chargement analyses:', error);
+      setError(error.response?.data?.message || 'Erreur de connexion');
+      setAnalyses([]);
     } finally {
-      setLoadingHistorique(false);
-    }
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type === 'application/pdf') {
-        setFile(droppedFile);
-        setError(null);
-      } else {
-        setError('Veuillez déposer un fichier PDF uniquement');
-      }
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      if (selectedFile.type === 'application/pdf') {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setError('Veuillez sélectionner un fichier PDF');
-        e.target.value = '';
-      }
+      setLoading(false);
     }
   };
 
   const handleAnalyse = async () => {
-    if (!file) {
-      setError('Veuillez sélectionner un fichier BMC');
+    if (!selectedFile) {
+      alert('Veuillez sélectionner un fichier PDF');
+      return;
+    }
+
+    if (selectedFile.type !== 'application/pdf') {
+      alert('Le fichier doit être au format PDF');
       return;
     }
 
     setUploading(true);
-    setError(null);
-    setResult(null);
-
     const formData = new FormData();
-    formData.append('bmc', file);
+    formData.append('bmc', selectedFile);
 
     try {
-      const response = await api.post('/ai/analyser-bmc', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const res = await api.post('/ai/analyser-bmc', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000
       });
-      
-      if (response.data.success) {
-        setResult(response.data);
-        await loadHistorique();
-        setFile(null);
-        const fileInput = document.getElementById('bmc-file');
-        if (fileInput) fileInput.value = '';
-        alert('✅ Analyse terminée !');
-        
-        await telechargerRapportPDF(response.data.analyseId);
-      } else {
-        setError(response.data.message || 'Erreur lors de l\'analyse');
+
+      if (res.data.success) {
+        setAnalyseResult(res.data);
+        setShowAnalyseModal(true);
+        setSelectedFile(null);
+        loadAnalyses();
       }
-    } catch (err) {
-      console.error('Erreur analyse:', err);
-      setError(err.response?.data?.message || 'Erreur lors de l\'analyse');
+    } catch (error) {
+      console.error('Erreur analyse:', error);
+      alert('Erreur: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
     }
   };
 
-  const telechargerRapportPDF = async (analyseId) => {
-    setGeneratingPdf(true);
-    try {
-      const res = await api.get(`/ai/analyse/${analyseId}/rapport`);
-      const data = res.data.analyse;
-      
-      const rapportHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Rapport d'analyse - ${data.porteur.firstName} ${data.porteur.lastName}</title>
-          <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; line-height: 1.6; }
-            .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; text-align: center; border-radius: 15px; }
-            .score { font-size: 48px; font-weight: bold; text-align: center; padding: 20px; border-radius: 15px; margin: 20px 0; }
-            .score-faible { background: #fee2e2; color: #ef4444; }
-            .score-moyen { background: #fef3c7; color: #f59e0b; }
-            .score-fort { background: #d1fae5; color: #10b981; }
-            .section { margin: 25px 0; padding: 20px; background: #f8fafc; border-radius: 12px; }
-            .section-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #1e293b; border-left: 4px solid #667eea; padding-left: 12px; }
-            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>📊 Rapport d'analyse d'impact</h1>
-            <p><strong>Porteur:</strong> ${data.porteur.firstName} ${data.porteur.lastName}</p>
-            <p><strong>Email:</strong> ${data.porteur.email}</p>
-            <p><strong>Date d'analyse:</strong> ${new Date(data.date).toLocaleDateString('fr-FR')}</p>
-          </div>
-          <div class="score score-${data.niveau}">
-            ${data.score}/100 - Niveau d'impact ${data.niveau === 'faible' ? 'Faible' : data.niveau === 'moyen' ? 'Moyen' : 'Fort'}
-          </div>
-          <div class="section">
-            <div class="section-title">🤖 Feedback de l'IA</div>
-            <p>${data.feedbackIA || 'Analyse terminée avec succès.'}</p>
-          </div>
-          ${data.feedbackAdmin ? `
-          <div class="section">
-            <div class="section-title">💬 Feedback de l'administrateur</div>
-            <p>${data.feedbackAdmin}</p>
-          </div>
-          ` : ''}
-          <div class="section">
-            <div class="section-title">📚 Formations recommandées</div>
-            <ul>${data.formations.map(f => `<li>${f}</li>`).join('')}</ul>
-          </div>
-          <div class="footer">
-            <p>Document généré par Incubiny - Plateforme d'incubation de startups</p>
-            <p>© ${new Date().getFullYear()} Incubiny - Tous droits réservés</p>
-          </div>
-        </body>
-        </html>
-      `;
-      
-      const blob = new Blob([rapportHTML], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rapport_analyse_${data.porteur.firstName}_${data.porteur.lastName}_${new Date().toISOString().split('T')[0]}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert('✅ Rapport téléchargé avec succès !');
-    } catch (error) {
-      console.error('Erreur génération rapport:', error);
-      alert('❌ Erreur lors de la génération du rapport');
-    } finally {
-      setGeneratingPdf(false);
-    }
-  };
-
-  const supprimerAnalyse = async (analyseId) => {
-    if (!window.confirm('⚠️ Êtes-vous sûr de vouloir supprimer cette analyse ?')) return;
-
-    try {
-      await api.delete(`/ai/analyse/${analyseId}`);
-      await loadHistorique();
-      alert('✅ Analyse supprimée avec succès');
-    } catch (error) {
-      console.error('Erreur suppression:', error);
-      alert('❌ Erreur lors de la suppression');
-    }
+  const handleViewDetails = (analyse) => {
+    setSelectedDetails(analyse);
+    setShowDetailsModal(true);
   };
 
   const getScoreColor = (score) => {
@@ -205,16 +94,40 @@ function GestionAnalysesIA() {
     return '#ef4444';
   };
 
-  const getScoreLabel = (score) => {
-    if (score >= 70) return 'Excellent';
-    if (score >= 40) return 'Bon';
-    return 'À améliorer';
+  const getScoreLevel = (score) => {
+    if (score >= 80) return { text: 'Excellent', icon: faTrophy, color: '#fbbf24' };
+    if (score >= 60) return { text: 'Très bien', icon: faThumbsUp, color: '#10b981' };
+    if (score >= 40) return { text: 'Bon', icon: faChartLine, color: '#3b82f6' };
+    return { text: 'À améliorer', icon: faExclamationTriangle, color: '#ef4444' };
+  };
+
+  const formatFeedback = (feedback) => {
+    if (!feedback) return [];
+    
+    const lines = feedback.split('\n');
+    const sections = [];
+    
+    lines.forEach(line => {
+      if (line.startsWith('✅')) {
+        sections.push({ type: 'success', text: line.substring(2).trim() });
+      } else if (line.startsWith('❌')) {
+        sections.push({ type: 'error', text: line.substring(2).trim() });
+      } else if (line.startsWith('📌')) {
+        sections.push({ type: 'info', text: line.substring(2).trim() });
+      } else if (line.startsWith('⚠️')) {
+        sections.push({ type: 'warning', text: line.substring(2).trim() });
+      } else if (line.trim()) {
+        sections.push({ type: 'neutral', text: line.trim() });
+      }
+    });
+    
+    return sections;
   };
 
   const styles = {
     container: {
       background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '24px',
+      borderRadius: '20px',
       padding: '24px',
       marginBottom: '24px'
     },
@@ -231,324 +144,414 @@ function GestionAnalysesIA() {
     },
     uploadSection: {
       background: darkMode ? '#0f172a' : '#f8fafc',
-      borderRadius: '20px',
-      padding: '30px',
-      textAlign: 'center',
-      border: dragActive ? '2px dashed #667eea' : `2px dashed ${darkMode ? '#475569' : '#cbd5e1'}`,
-      marginBottom: '24px'
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      border: `2px dashed ${darkMode ? '#475569' : '#cbd5e1'}`
     },
-    fileInput: { display: 'none' },
-    fileLabel: {
-      background: '#667eea',
-      color: 'white',
-      padding: '10px 24px',
-      borderRadius: '30px',
-      cursor: 'pointer',
-      display: 'inline-flex',
+    uploadTitle: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      marginBottom: '8px',
+      color: darkMode ? '#ffffff' : '#1e293b',
+      display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '10px'
+    },
+    uploadSubtitle: {
+      fontSize: '13px',
+      color: darkMode ? '#94a3b8' : '#64748b',
+      marginBottom: '20px'
+    },
+    fileInput: {
+      display: 'block',
+      width: '100%',
+      padding: '12px',
+      borderRadius: '10px',
+      border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
+      background: darkMode ? '#1e293b' : 'white',
+      color: darkMode ? '#f1f5f9' : '#1e293b',
+      marginBottom: '16px',
+      cursor: 'pointer'
     },
     analyseBtn: {
+      width: '100%',
+      padding: '12px',
       background: 'linear-gradient(135deg, #667eea, #764ba2)',
       color: 'white',
       border: 'none',
-      padding: '12px 28px',
-      borderRadius: '40px',
+      borderRadius: '10px',
       cursor: 'pointer',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      marginTop: '20px'
-    },
-    resultSection: {
-      marginTop: '24px',
-      padding: '20px',
-      background: darkMode ? '#0f172a' : '#f8fafc',
-      borderRadius: '20px',
-      animation: 'fadeIn 0.3s ease'
-    },
-    scoreCircle: {
-      width: '120px',
-      height: '120px',
-      margin: '0 auto 16px'
-    },
-    scoreOuter: (score) => ({
-      width: '120px',
-      height: '120px',
-      borderRadius: '50%',
-      background: `conic-gradient(${getScoreColor(score)} ${score * 3.6}deg, ${darkMode ? '#334155' : '#e2e8f0'} 0deg)`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }),
-    scoreInner: {
-      width: '90px',
-      height: '90px',
-      borderRadius: '50%',
-      background: darkMode ? '#1e293b' : 'white',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    scoreValue: (score) => ({ 
-      fontSize: '28px', 
-      fontWeight: 'bold', 
-      color: getScoreColor(score) 
-    }),
-    scoreLabel: { 
-      fontSize: '12px', 
-      color: darkMode ? '#94a3b8' : '#64748b' 
-    },
-    feedbackText: {
       fontSize: '14px',
-      lineHeight: '1.6',
-      color: darkMode ? '#cbd5e1' : '#475569',
-      marginTop: '16px',
-      padding: '16px',
-      background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '12px'
-    },
-    formationsList: {
+      fontWeight: 'bold',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    analyseBtnDisabled: {
+      opacity: 0.6,
+      cursor: 'not-allowed'
+    },
+    selectedFileInfo: {
+      marginTop: '12px',
+      padding: '10px',
+      background: darkMode ? '#1e293b' : '#e2e8f0',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    },
+    analyseCard: {
+      background: darkMode ? '#0f172a' : '#f8fafc',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '16px',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      cursor: 'pointer',
+      transition: 'all 0.3s ease'
+    },
+    analyseHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
       flexWrap: 'wrap',
-      gap: '10px',
-      marginTop: '12px'
+      gap: '12px',
+      marginBottom: '16px'
     },
-    formationTag: {
-      background: darkMode ? '#334155' : '#e2e8f0',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      color: darkMode ? '#e2e8f0' : '#475569'
-    },
-    historiqueSection: {
-      marginTop: '24px',
-      borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-      paddingTop: '20px'
-    },
-    historiqueTitle: {
+    analyseTitle: {
       fontSize: '16px',
       fontWeight: 'bold',
-      marginBottom: '16px',
+      color: darkMode ? '#ffffff' : '#1e293b'
+    },
+    scoreBadge: (score) => ({
+      display: 'inline-block',
+      padding: '6px 14px',
+      borderRadius: '20px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      background: getScoreColor(score) + '20',
+      color: getScoreColor(score)
+    }),
+    emptyState: {
+      textAlign: 'center',
+      padding: '40px',
+      color: darkMode ? '#94a3b8' : '#64748b'
+    },
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    },
+    modalContent: {
+      background: darkMode ? '#1e293b' : 'white',
+      borderRadius: '24px',
+      padding: '28px',
+      maxWidth: '650px',
+      width: '90%',
+      maxHeight: '85vh',
+      overflowY: 'auto'
+    },
+    modalTitle: {
+      fontSize: '22px',
+      fontWeight: 'bold',
+      marginBottom: '20px',
+      color: darkMode ? '#ffffff' : '#1e293b',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      borderBottom: `2px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      paddingBottom: '16px'
+    },
+    scoreContainer: {
+      textAlign: 'center',
+      padding: '24px',
+      borderRadius: '20px',
+      marginBottom: '24px'
+    },
+    scoreValue: {
+      fontSize: '56px',
+      fontWeight: 'bold'
+    },
+    scoreLevel: {
+      fontSize: '18px',
+      fontWeight: 'bold',
+      marginTop: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    feedbackSection: {
+      marginBottom: '24px'
+    },
+    feedbackTitle: {
+      fontSize: '16px',
+      fontWeight: 'bold',
+      marginBottom: '12px',
       color: darkMode ? '#ffffff' : '#1e293b',
       display: 'flex',
       alignItems: 'center',
       gap: '8px'
     },
-    historiqueItem: {
+    feedbackItem: (type) => ({
+      padding: '10px 14px',
+      marginBottom: '8px',
+      borderRadius: '10px',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      background: type === 'success' ? (darkMode ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5') :
+                type === 'error' ? (darkMode ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2') :
+                type === 'warning' ? (darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7') :
+                (darkMode ? 'rgba(255,255,255,0.05)' : '#f8fafc'),
+      color: type === 'success' ? '#10b981' :
+             type === 'error' ? '#ef4444' :
+             type === 'warning' ? '#f59e0b' :
+             (darkMode ? '#e2e8f0' : '#334155'),
+      borderLeft: `3px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#667eea'}`
+    }),
+    recommandationCard: {
+      padding: '12px 16px',
+      marginBottom: '10px',
+      background: darkMode ? '#0f172a' : '#fef3c7',
+      borderRadius: '12px',
+      borderLeft: `4px solid #f59e0b`,
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '12px',
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
-      flexWrap: 'wrap',
+      alignItems: 'flex-start',
       gap: '10px'
     },
-    historiqueScore: (score) => ({
-      padding: '4px 10px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      background: getScoreColor(score) + '20',
-      color: getScoreColor(score)
-    }),
-    deleteBtn: {
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: '6px 10px',
-      borderRadius: '6px',
-      transition: 'background 0.2s'
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '30px',
-      color: darkMode ? '#94a3b8' : '#64748b'
-    },
-    fileInfo: {
-      marginTop: '12px',
-      padding: '8px 12px',
-      background: darkMode ? '#334155' : '#e2e8f0',
-      borderRadius: '10px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      fontSize: '13px',
-      color: darkMode ? '#e2e8f0' : '#475569'
-    },
-    removeFileBtn: {
-      background: '#ef4444',
+    closeBtn: {
+      width: '100%',
+      padding: '14px',
+      background: 'linear-gradient(135deg, #667eea, #764ba2)',
       color: 'white',
       border: 'none',
-      padding: '4px 8px',
-      borderRadius: '6px',
+      borderRadius: '12px',
       cursor: 'pointer',
-      fontSize: '11px'
+      fontSize: '15px',
+      fontWeight: 'bold',
+      marginTop: '24px'
     }
   };
+
+  const scoreLevel = analyseResult ? getScoreLevel(analyseResult.scoreImpact) : null;
 
   return (
     <div style={styles.container}>
       <div style={styles.title}>
-        <FontAwesomeIcon icon={faBrain} color="#667eea" size="24px" />
-        Analyse d'impact par IA
+        <FontAwesomeIcon icon={faRobot} color="#667eea" />
+        Analyse IA de mon Business Model Canvas
       </div>
 
-      {/* Section upload */}
-      <div 
-        style={styles.uploadSection}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
-        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: darkMode ? '#ffffff' : '#1e293b' }}>
-          Déposez votre Business Model Canvas (PDF)
+      {/* SECTION UPLOAD */}
+      <div style={styles.uploadSection}>
+        <div style={styles.uploadTitle}>
+          <FontAwesomeIcon icon={faUpload} color="#667eea" />
+          Nouvelle analyse
         </div>
-        <div style={{ fontSize: '14px', marginBottom: '16px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-          Analyse instantanée - Téléchargement automatique du rapport
+        <div style={styles.uploadSubtitle}>
+          Téléchargez votre Business Model Canvas (PDF) pour obtenir une analyse complète
         </div>
-        
-        <input type="file" id="bmc-file" accept=".pdf" onChange={handleFileChange} style={styles.fileInput} />
-        <label htmlFor="bmc-file" style={styles.fileLabel}>
-          <FontAwesomeIcon icon={faUpload} /> Choisir un fichier
-        </label>
-        
-        {file && (
-          <div style={styles.fileInfo}>
-            <FontAwesomeIcon icon={faFilePdf} color="#ef4444" />
-            <span>{file.name}</span>
-            <button onClick={() => setFile(null)} style={styles.removeFileBtn}>
-              <FontAwesomeIcon icon={faTrashAlt} size="sm" /> Supprimer
-            </button>
+
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => setSelectedFile(e.target.files[0])}
+          style={styles.fileInput}
+        />
+
+        {selectedFile && (
+          <div style={styles.selectedFileInfo}>
+            <span><FontAwesomeIcon icon={faFilePdf} style={{ marginRight: '8px', color: '#ef4444' }} />{selectedFile.name}</span>
+            <button onClick={() => setSelectedFile(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>✕</button>
           </div>
         )}
-        
-        {!file && (
-          <div style={{ marginTop: '12px', fontSize: '12px', color: darkMode ? '#64748b' : '#94a3b8' }}>
-            ou glissez-déposez votre fichier ici
-          </div>
-        )}
-        
-        <button 
-          onClick={handleAnalyse} 
-          disabled={uploading || !file}
+
+        <button
+          onClick={handleAnalyse}
+          disabled={!selectedFile || uploading}
           style={{
             ...styles.analyseBtn,
-            opacity: (uploading || !file) ? 0.6 : 1,
-            cursor: (uploading || !file) ? 'not-allowed' : 'pointer'
+            ...((!selectedFile || uploading) ? styles.analyseBtnDisabled : {})
           }}
         >
           {uploading ? (
             <><FontAwesomeIcon icon={faSpinner} spin /> Analyse en cours...</>
           ) : (
-            <><FontAwesomeIcon icon={faChartLine} /> Analyser mon impact</>
+            <><FontAwesomeIcon icon={faRobot} /> Analyser mon BMC</>
           )}
         </button>
-        
-        {error && <div style={{ marginTop: '12px', color: '#ef4444', fontSize: '13px' }}>{error}</div>}
       </div>
 
-      {/* Résultat de l'analyse */}
-      {result && (
-        <div style={styles.resultSection}>
-          <div style={styles.scoreCircle}>
-            <div style={styles.scoreOuter(result.scoreImpact)}>
-              <div style={styles.scoreInner}>
-                <div style={styles.scoreValue(result.scoreImpact)}>{result.scoreImpact}%</div>
-                <div style={styles.scoreLabel}>{getScoreLabel(result.scoreImpact)}</div>
+      {/* HISTORIQUE */}
+      <div style={{ ...styles.title, marginTop: '24px' }}>
+        <FontAwesomeIcon icon={faChartLine} color="#667eea" />
+        Historique des analyses
+      </div>
+
+      {loading ? (
+        <div style={styles.emptyState}>
+          <FontAwesomeIcon icon={faSpinner} spin size="2x" />
+          <p>Chargement des analyses...</p>
+        </div>
+      ) : analyses.length === 0 ? (
+        <div style={styles.emptyState}>
+          <FontAwesomeIcon icon={faChartLine} size="48px" style={{ opacity: 0.3, marginBottom: '16px' }} />
+          <p>Aucune analyse effectuée pour le moment</p>
+        </div>
+      ) : (
+        analyses.map((analyse) => (
+          <div key={analyse._id} style={styles.analyseCard} onClick={() => handleViewDetails(analyse)}>
+            <div style={styles.analyseHeader}>
+              <div style={styles.analyseTitle}>
+                <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px' }} />
+                Analyse du {new Date(analyse.dateAnalyse).toLocaleDateString('fr-FR')}
+              </div>
+              <div style={styles.scoreBadge(analyse.scoreImpact)}>
+                Score: {analyse.scoreImpact}/100
               </div>
             </div>
-          </div>
-
-          <div style={styles.feedbackText}>
-            <strong><FontAwesomeIcon icon={faInfoCircle} /> Feedback IA :</strong><br />
-            {result.feedback || 'Analyse terminée avec succès.'}
-          </div>
-
-          {result.secteur && (
-            <div style={{ marginTop: '16px' }}>
-              <strong>🎯 Secteur détecté :</strong> {result.secteur.icone} {result.secteur.nom}
+            <div style={{ fontSize: '13px', color: darkMode ? '#94a3b8' : '#64748b' }}>
+              {analyse.feedback?.substring(0, 100)}...
             </div>
-          )}
+          </div>
+        ))
+      )}
 
-          {result.formations && result.formations.length > 0 && (
-            <>
-              <div style={{ marginTop: '20px' }}>
-                <strong>📚 Formations recommandées :</strong>
+      {/* MODAL RÉSULTAT ANALYSE */}
+      {showAnalyseModal && analyseResult && (
+        <div style={styles.modalOverlay} onClick={() => setShowAnalyseModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalTitle}>
+              <FontAwesomeIcon icon={faRobot} color="#667eea" />
+              🤖 Résultat de l'analyse
+            </div>
+
+            <div style={{ ...styles.scoreContainer, background: getScoreColor(analyseResult.scoreImpact) + '15' }}>
+              <div style={{ ...styles.scoreValue, color: getScoreColor(analyseResult.scoreImpact) }}>
+                {analyseResult.scoreImpact}/100
               </div>
-              <div style={styles.formationsList}>
-                {result.formations.map((formation, idx) => (
-                  <span key={idx} style={styles.formationTag}>
-                    <FontAwesomeIcon icon={faCheckCircle} size="10px" style={{ marginRight: '4px', color: '#10b981' }} />
-                    {formation}
-                  </span>
+              {scoreLevel && (
+                <div style={styles.scoreLevel}>
+                  <FontAwesomeIcon icon={scoreLevel.icon} style={{ color: scoreLevel.color }} />
+                  <span style={{ color: scoreLevel.color }}>{scoreLevel.text}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.feedbackSection}>
+              <div style={styles.feedbackTitle}>
+                <FontAwesomeIcon icon={faComment} color="#667eea" />
+                Analyse détaillée
+              </div>
+              {formatFeedback(analyseResult.feedback).map((item, idx) => (
+                <div key={idx} style={styles.feedbackItem(item.type)}>
+                  {item.type === 'success' && <FontAwesomeIcon icon={faCheck} style={{ marginRight: '8px' }} />}
+                  {item.type === 'error' && <FontAwesomeIcon icon={faTimes} style={{ marginRight: '8px' }} />}
+                  {item.type === 'warning' && <FontAwesomeIcon icon={faExclamationTriangle} style={{ marginRight: '8px' }} />}
+                  {item.type === 'info' && <FontAwesomeIcon icon={faInfoCircle} style={{ marginRight: '8px' }} />}
+                  {item.text}
+                </div>
+              ))}
+            </div>
+
+            {analyseResult.recommandations && analyseResult.recommandations.length > 0 && (
+              <div>
+                <div style={styles.feedbackTitle}>
+                  <FontAwesomeIcon icon={faLightbulb} color="#f59e0b" />
+                  Recommandations personnalisées
+                </div>
+                {analyseResult.recommandations.map((rec, i) => (
+                  <div key={i} style={styles.recommandationCard}>
+                    <FontAwesomeIcon icon={faArrowRight} color="#f59e0b" />
+                    <span>{rec}</span>
+                  </div>
                 ))}
               </div>
-            </>
-          )}
+            )}
+
+            <button style={styles.closeBtn} onClick={() => setShowAnalyseModal(false)}>
+              Voir tous les détails dans l'historique
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Historique des analyses */}
-      <div style={styles.historiqueSection}>
-        <div style={styles.historiqueTitle}>
-          <FontAwesomeIcon icon={faChartLine} color="#667eea" />
-          Historique des analyses
-        </div>
-        
-        {loadingHistorique ? (
-          <div style={styles.emptyState}>Chargement...</div>
-        ) : historique.length === 0 ? (
-          <div style={styles.emptyState}>
-            Aucune analyse effectuée pour le moment
-          </div>
-        ) : (
-          historique.map(analyse => (
-            <div key={analyse._id} style={styles.historiqueItem}>
-              <div>
-                <div style={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : '#1e293b' }}>
-                  {analyse.fichierBMC || 'Analyse BMC'}
+      {/* MODAL DÉTAILS ANALYSE EXISTANTE */}
+      {showDetailsModal && selectedDetails && (
+        <div style={styles.modalOverlay} onClick={() => setShowDetailsModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalTitle}>
+              <FontAwesomeIcon icon={faEye} color="#667eea" />
+              Détails de l'analyse
+            </div>
+
+            <div style={{ marginBottom: '20px', padding: '16px', background: darkMode ? '#0f172a' : '#f8fafc', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <FontAwesomeIcon icon={faCalendar} style={{ marginRight: '8px', color: '#667eea' }} />
+                  <strong>Date :</strong> {new Date(selectedDetails.dateAnalyse).toLocaleString()}
                 </div>
-                <div style={{ fontSize: '11px', color: darkMode ? '#94a3b8' : '#64748b' }}>
-                  {new Date(analyse.dateAnalyse).toLocaleDateString('fr-FR')}
-                  {analyse.feedbackAdmin && <span style={{ marginLeft: '8px', color: '#10b981' }}>📝 Feedback reçu</span>}
+                <div style={styles.scoreBadge(selectedDetails.scoreImpact)}>
+                  Score: {selectedDetails.scoreImpact}/100
                 </div>
-              </div>
-              <div style={styles.historiqueScore(analyse.scoreImpact)}>
-                {analyse.scoreImpact}/100
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={() => telechargerRapportPDF(analyse._id)}
-                  style={styles.deleteBtn}
-                  title="Télécharger rapport"
-                  disabled={generatingPdf}
-                >
-                  <FontAwesomeIcon icon={faDownload} color="#667eea" />
-                </button>
-                <button 
-                  onClick={() => supprimerAnalyse(analyse._id)}
-                  style={styles.deleteBtn}
-                  title="Supprimer"
-                >
-                  <FontAwesomeIcon icon={faTrashAlt} color="#ef4444" />
-                </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `
-      }} />
+            <div style={styles.feedbackSection}>
+              <div style={styles.feedbackTitle}>
+                <FontAwesomeIcon icon={faComment} color="#667eea" />
+                Analyse détaillée
+              </div>
+              {formatFeedback(selectedDetails.feedback).map((item, idx) => (
+                <div key={idx} style={styles.feedbackItem(item.type)}>
+                  {item.type === 'success' && <FontAwesomeIcon icon={faCheck} style={{ marginRight: '8px' }} />}
+                  {item.type === 'error' && <FontAwesomeIcon icon={faTimes} style={{ marginRight: '8px' }} />}
+                  {item.type === 'warning' && <FontAwesomeIcon icon={faExclamationTriangle} style={{ marginRight: '8px' }} />}
+                  {item.type === 'info' && <FontAwesomeIcon icon={faInfoCircle} style={{ marginRight: '8px' }} />}
+                  {item.text}
+                </div>
+              ))}
+            </div>
+
+            {selectedDetails.recommandations && selectedDetails.recommandations.length > 0 && (
+              <div>
+                <div style={styles.feedbackTitle}>
+                  <FontAwesomeIcon icon={faLightbulb} color="#f59e0b" />
+                  Recommandations
+                </div>
+                {selectedDetails.recommandations.map((rec, i) => (
+                  <div key={i} style={styles.recommandationCard}>
+                    <FontAwesomeIcon icon={faArrowRight} color="#f59e0b" />
+                    <span>{rec}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedDetails.feedbackAdmin && (
+              <div style={{ marginTop: '20px', padding: '16px', background: darkMode ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5', borderRadius: '12px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FontAwesomeIcon icon={faUserCheck} color="#10b981" />
+                  Feedback de l'administrateur
+                </div>
+                <p style={{ lineHeight: '1.5' }}>{selectedDetails.feedbackAdmin}</p>
+              </div>
+            )}
+
+            <button style={styles.closeBtn} onClick={() => setShowDetailsModal(false)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import NotificationPopup from './NotificationPopup';
 import api from '../utils/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -14,32 +13,47 @@ import {
   faTimes,
   faChevronDown,
   faChevronUp,
-  faLanguage
+  faBell,
+  faCheckCircle,
+  faExclamationTriangle,
+  faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 
 function Navbar({ user, onLogout }) {
   const { darkMode, toggleDarkMode } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notificationsMenuOpen, setNotificationsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [uploading, setUploading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const profileMenuRef = useRef(null);
+  const notificationsMenuRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     loadUserProfile();
+    loadNotifications();
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const interval = setInterval(loadNotifications, 30000);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setProfileMenuOpen(false);
+      }
+      if (notificationsMenuRef.current && !notificationsMenuRef.current.contains(event.target)) {
+        setNotificationsMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -49,6 +63,7 @@ function Navbar({ user, onLogout }) {
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileMenuOpen(false);
+    setNotificationsMenuOpen(false);
   }, [location]);
 
   const loadUserProfile = async () => {
@@ -58,6 +73,39 @@ function Navbar({ user, onLogout }) {
       localStorage.setItem('user', JSON.stringify(res.data));
     } catch (error) {
       console.error('Erreur chargement profil:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const res = await api.get('/notifications/mes-notifications');
+      const notifs = res.data || [];
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.estLue).length);
+    } catch (error) {
+      console.error('Erreur chargement notifications:', error);
+    }
+  };
+
+  const marquerCommeLue = async (id) => {
+    try {
+      await api.put(`/notifications/${id}/lire`);
+      setNotifications(prev => prev.map(n => 
+        n._id === id ? { ...n, estLue: true } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  };
+
+  const marquerToutCommeLu = async () => {
+    try {
+      await api.put('/notifications/marquer-tout-lu');
+      setNotifications(prev => prev.map(n => ({ ...n, estLue: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Erreur:', error);
     }
   };
 
@@ -146,6 +194,32 @@ function Navbar({ user, onLogout }) {
     return null;
   };
 
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case 'succes': return '✅';
+      case 'warning': return '⚠️';
+      case 'erreur': return '❌';
+      case 'info': return 'ℹ️';
+      default: return '🔔';
+    }
+  };
+
+  const formatDate = (date) => {
+    const now = new Date();
+    const notifDate = new Date(date);
+    const diffMs = now - notifDate;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours} h`;
+    if (diffDays === 1) return 'Hier';
+    if (diffDays < 7) return `Il y a ${diffDays} jours`;
+    return notifDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+
   const styles = {
     nav: {
       background: scrolled 
@@ -156,7 +230,9 @@ function Navbar({ user, onLogout }) {
       position: 'sticky',
       top: 0,
       zIndex: 1000,
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
     },
     navContainer: {
       maxWidth: '1400px',
@@ -171,20 +247,33 @@ function Navbar({ user, onLogout }) {
       gap: '10px',
       cursor: 'pointer'
     },
-    logo: { height: '36px', width: '36px', objectFit: 'contain' },
+    logo: {
+      height: '36px',
+      width: '36px',
+      objectFit: 'contain'
+    },
+    logoFallback: {
+      width: '36px',
+      height: '36px',
+      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
     logoText: {
-      color: darkMode ? '#f1f5f9' : '#667eea',
       margin: 0,
       fontSize: '20px',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      color: darkMode ? '#f1f5f9' : '#667eea'
     },
     desktopMenu: {
       display: 'flex',
       alignItems: 'center',
-      gap: '16px'
+      gap: '12px'
     },
     themeBtn: {
-      background: 'none',
+      background: darkMode ? '#334155' : '#f1f5f9',
       color: darkMode ? '#f1f5f9' : '#475569',
       padding: '8px 12px',
       borderRadius: '10px',
@@ -192,7 +281,87 @@ function Navbar({ user, onLogout }) {
       border: 'none',
       fontSize: '16px',
       display: 'flex',
+      alignItems: 'center',
+      transition: 'all 0.3s ease'
+    },
+    notificationContainer: { position: 'relative' },
+    notificationPanel: {
+      position: 'absolute',
+      top: '50px',
+      right: '0',
+      width: '400px',
+      maxWidth: 'calc(100vw - 20px)',
+      background: darkMode ? '#1e293b' : 'white',
+      borderRadius: '16px',
+      boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+      zIndex: 100,
+      overflow: 'hidden',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+    },
+    notificationHeader: {
+      padding: '16px 20px',
+      background: darkMode ? '#0f172a' : '#f8fafc',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      display: 'flex',
+      justifyContent: 'space-between',
       alignItems: 'center'
+    },
+    notificationTitle: {
+      fontWeight: 'bold',
+      fontSize: '16px',
+      color: darkMode ? '#ffffff' : '#1e293b'
+    },
+    markAllRead: {
+      background: 'none',
+      border: 'none',
+      color: '#667eea',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: '500',
+      padding: '4px 8px',
+      borderRadius: '6px',
+      transition: 'all 0.2s'
+    },
+    notificationList: {
+      maxHeight: '450px',
+      overflowY: 'auto'
+    },
+    notificationItem: (estLue) => ({
+      padding: '14px 20px',
+      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      background: estLue ? 'transparent' : (darkMode ? 'rgba(147, 51, 234, 0.1)' : 'rgba(147, 51, 234, 0.05)'),
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    }),
+    notificationItemContent: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'flex-start'
+    },
+    notificationIcon: {
+      fontSize: '20px',
+      minWidth: '32px',
+      textAlign: 'center'
+    },
+    notificationText: {
+      flex: 1,
+      wordBreak: 'break-word'
+    },
+    notificationMessage: {
+      fontSize: '13px',
+      color: darkMode ? '#e2e8f0' : '#334155',
+      marginBottom: '6px',
+      lineHeight: '1.4'
+    },
+    notificationDate: {
+      fontSize: '10px',
+      color: darkMode ? '#64748b' : '#94a3b8',
+      marginTop: '4px'
+    },
+    emptyNotifications: {
+      textAlign: 'center',
+      padding: '40px 20px',
+      color: darkMode ? '#94a3b8' : '#64748b'
     },
     profileContainer: { position: 'relative' },
     profileBtn: {
@@ -302,27 +471,189 @@ function Navbar({ user, onLogout }) {
       fontSize: '15px',
       fontWeight: '500',
       color: darkMode ? '#f1f5f9' : '#1e293b'
+    },
+    mobileNotificationBadge: {
+      background: '#ef4444',
+      color: 'white',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+      fontSize: '11px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: '8px'
+    },
+    closeBtn: {
+      background: 'none',
+      border: 'none',
+      fontSize: '22px',
+      cursor: 'pointer',
+      color: darkMode ? '#f1f5f9' : '#475569'
     }
   };
 
   const avatarUrl = getAvatarUrl();
   const hasAvatar = !!avatarUrl;
+  const [logoError, setLogoError] = useState(false);
 
   return (
     <>
       <nav style={styles.nav}>
         <div style={styles.navContainer}>
-          <div style={styles.logoContainer}>
-            <img src="/logo-incubiny.png" alt="Incubiny" style={styles.logo} />
+          <div style={styles.logoContainer} onClick={() => navigate('/')}>
+            {!logoError ? (
+              <img 
+                src="/logo-incubiny.png" 
+                alt="Incubiny" 
+                style={styles.logo}
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div style={styles.logoFallback}>
+                <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>I</span>
+              </div>
+            )}
             <h2 style={styles.logoText}>Incubiny</h2>
           </div>
 
           <div style={styles.desktopMenu}>
-            <NotificationPopup />
-
             <button className="btn-shine" onClick={toggleDarkMode} style={styles.themeBtn}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
             </button>
+
+            {/* NOTIFICATIONS AVEC COMPTEUR VISIBLE */}
+            <div style={styles.notificationContainer}>
+              <button 
+                className="btn-shine" 
+                style={{
+                  position: 'relative',
+                  background: unreadCount > 0 
+                    ? (darkMode ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.15)')
+                    : (darkMode ? '#334155' : '#f1f5f9'),
+                  border: unreadCount > 0 ? `2px solid #f59e0b` : 'none',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease'
+                }} 
+                onClick={() => setNotificationsMenuOpen(!notificationsMenuOpen)}
+              >
+                <FontAwesomeIcon 
+                  icon={faBell} 
+                  size="lg"
+                  style={{ 
+                    color: unreadCount > 0 ? '#f59e0b' : (darkMode ? '#94a3b8' : '#64748b'),
+                    transition: 'all 0.3s ease',
+                    animation: unreadCount > 0 ? 'bellShake 0.5s ease-in-out' : 'none'
+                  }} 
+                />
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    right: '-8px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    minWidth: '24px',
+                    height: '24px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 6px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px ' + (darkMode ? '#1e293b' : 'white'),
+                    zIndex: 10,
+                    letterSpacing: '0.5px'
+                  }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsMenuOpen && (
+                <div style={styles.notificationPanel}>
+                  <div style={styles.notificationHeader}>
+                    <span style={styles.notificationTitle}>
+                      <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px', fontSize: '14px', color: unreadCount > 0 ? '#f59e0b' : '#667eea' }} />
+                      Notifications
+                      {unreadCount > 0 && (
+                        <span style={{ 
+                          marginLeft: '8px', 
+                          fontSize: '12px', 
+                          fontWeight: 'bold',
+                          color: 'white',
+                          background: '#ef4444',
+                          padding: '2px 10px',
+                          borderRadius: '20px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        }}>
+                          {unreadCount}
+                        </span>
+                      )}
+                    </span>
+                    {unreadCount > 0 && (
+                      <button 
+                        style={styles.markAllRead} 
+                        onClick={marquerToutCommeLu}
+                        onMouseEnter={(e) => e.currentTarget.style.background = darkMode ? '#334155' : '#e2e8f0'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                      >
+                        Tout marquer comme lu
+                      </button>
+                    )}
+                  </div>
+                  <div style={styles.notificationList}>
+                    {notifications.length === 0 ? (
+                      <div style={styles.emptyNotifications}>
+                        <FontAwesomeIcon icon={faBell} size="2x" style={{ opacity: 0.3, marginBottom: '12px' }} />
+                        <p>Aucune notification</p>
+                        <p style={{ fontSize: '11px', marginTop: '8px' }}>Vous serez notifié des mises à jour importantes</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif._id} 
+                          style={styles.notificationItem(notif.estLue)}
+                          onClick={() => marquerCommeLue(notif._id)}
+                        >
+                          <div style={styles.notificationItemContent}>
+                            <div style={styles.notificationIcon}>
+                              {getNotificationIcon(notif.type)}
+                            </div>
+                            <div style={styles.notificationText}>
+                              <div style={styles.notificationMessage}>
+                                {notif.message}
+                              </div>
+                              <div style={styles.notificationDate}>
+                                {formatDate(notif.createdAt)}
+                              </div>
+                            </div>
+                            {!notif.estLue && (
+                              <div style={{
+                                width: '10px',
+                                height: '10px',
+                                background: '#ef4444',
+                                borderRadius: '50%',
+                                marginTop: '8px',
+                                flexShrink: 0,
+                                boxShadow: '0 0 0 2px ' + (darkMode ? '#1e293b' : 'white')
+                              }} />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div style={styles.profileContainer} ref={profileMenuRef}>
               <button className="btn-shine" style={styles.profileBtn} onClick={() => setProfileMenuOpen(!profileMenuOpen)}>
@@ -380,7 +711,7 @@ function Navbar({ user, onLogout }) {
           <div style={styles.mobileMenu}>
             <div style={styles.mobileMenuHeader}>
               <img src="/logo-incubiny.png" alt="Logo" style={{ height: '32px' }} />
-              <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer' }}>
+              <button onClick={() => setMobileMenuOpen(false)} style={styles.closeBtn}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -395,6 +726,14 @@ function Navbar({ user, onLogout }) {
                 <div style={{ fontWeight: 'bold' }}>{currentUser?.firstName} {currentUser?.lastName}</div>
                 <div style={{ fontSize: '11px', opacity: 0.7 }}>{currentUser?.email}</div>
               </div>
+            </div>
+            
+            <div className="btn-shine" style={styles.mobileMenuItem} onClick={() => {
+              setMobileMenuOpen(false);
+              setNotificationsMenuOpen(true);
+            }}>
+              <FontAwesomeIcon icon={faBell} /> Notifications
+              {unreadCount > 0 && <span style={styles.mobileNotificationBadge}>{unreadCount}</span>}
             </div>
             
             <div className="btn-shine" style={styles.mobileMenuItem} onClick={handleChangePhoto}>
@@ -429,7 +768,7 @@ function Navbar({ user, onLogout }) {
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.5s ease;
           }
           .btn-shine:hover::before {
@@ -437,6 +776,13 @@ function Navbar({ user, onLogout }) {
           }
           .btn-shine:hover {
             transform: translateY(-2px);
+          }
+          @keyframes bellShake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
           }
           @media (max-width: 768px) {
             .desktop-menu {

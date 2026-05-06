@@ -16,7 +16,7 @@ import {
   faChartLine, faFileAlt, faEye, faCheck, faTimes, 
   faExclamationTriangle, faBuilding, faTasks, faUpload,
   faRocket, faClipboardList, faUserGraduate, faAward,
-  faCalendar, faBell, faHistory, faSpinner
+  faCalendar, faBell, faHistory, faSpinner, faRobot
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordPorteur({ user, onLogout }) {
@@ -69,43 +69,36 @@ function TableauBordPorteur({ user, onLogout }) {
     showToastMessage('success', 'Photo de profil mise à jour !');
   };
 
- const loadData = async () => {
-  setLoading(true);
-  try {
-    const [projetsRes, tachesRes, etapesRes] = await Promise.all([
-      api.get('/projets/mes-projets'),
-      api.get('/taches/mes-taches'),
-      api.get('/etapes/mes-etapes')
-    ]);
-    setProjets(projetsRes.data || []);
-    setTaches(tachesRes.data || []);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [projetsRes, tachesRes, etapesRes] = await Promise.all([
+        api.get('/projets/mes-projets'),
+        api.get('/taches/mes-taches'),
+        api.get('/etapes/mes-etapes')
+      ]);
+      setProjets(projetsRes.data || []);
+      setTaches(tachesRes.data || []);
 
-    const etapesData = etapesRes.data || [];
-    
-    // 📊 Calcul de la progression (0% au début)
-    const etapesValidees = etapesData.filter(e => e.statut === 'validee').length;
-    const totalEtapes = etapesData.length;
-    
-    // Progression = (étapes validées / total étapes) * 100
-    // Si aucune étape assignée, progression = 0
-    const progression = totalEtapes > 0 ? Math.round((etapesValidees / totalEtapes) * 100) : 0;
-    
-    // Étapes restantes à faire
-    const etapesRestantes = etapesData.filter(e => e.statut !== 'validee').length;
+      const etapesData = etapesRes.data || [];
+      const etapesValidees = etapesData.filter(e => e.statut === 'validee').length;
+      const totalEtapes = etapesData.length;
+      const progression = totalEtapes > 0 ? Math.round((etapesValidees / totalEtapes) * 100) : 0;
+      const etapesRestantes = etapesData.filter(e => e.statut !== 'validee').length;
 
-    setStats({
-      projetsCount: projetsRes.data?.length || 0,
-      tachesCount: tachesRes.data?.filter(t => !t.estComplete).length || 0,
-      etapesCount: etapesRestantes,
-      progression: progression  // ← Commence à 0%
-    });
-  } catch (error) {
-    console.error('Erreur chargement:', error);
-    showToastMessage('error', 'Erreur lors du chargement des données');
-  } finally {
-    setLoading(false);
-  }
-};
+      setStats({
+        projetsCount: projetsRes.data?.length || 0,
+        tachesCount: tachesRes.data?.filter(t => !t.estComplete).length || 0,
+        etapesCount: etapesRestantes,
+        progression: progression
+      });
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+      showToastMessage('error', 'Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadSoumissions = async () => {
     try {
@@ -144,7 +137,6 @@ function TableauBordPorteur({ user, onLogout }) {
           height: 'calc(100vh - 70px)',
           gap: '24px'
         }}>
-          {/* Logo animé */}
           <div style={{
             width: '80px',
             height: '80px',
@@ -157,8 +149,6 @@ function TableauBordPorteur({ user, onLogout }) {
           }}>
             <img src="/logo-incubiny.png" alt="Incubiny" style={{ width: '45px', height: '45px', filter: 'brightness(0) invert(1)' }} />
           </div>
-          
-          {/* Spinner */}
           <div style={{
             width: '60px',
             height: '60px',
@@ -167,14 +157,10 @@ function TableauBordPorteur({ user, onLogout }) {
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />
-          
-          {/* Message */}
           <p style={{ color: darkMode ? '#94a3b8' : '#475569', fontSize: '14px' }}>
             <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
             Chargement de votre espace porteur...
           </p>
-          
-          {/* Barre de progression animée */}
           <div style={{
             width: '250px',
             height: '3px',
@@ -254,10 +240,8 @@ function TableauBordPorteur({ user, onLogout }) {
     userName: { 
       fontSize: 'clamp(20px, 5vw, 24px)', 
       fontWeight: 'bold', 
-      background: darkMode ? 'linear-gradient(135deg, #f1f5f9, #cbd5e1)' : colors.gradient1,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      marginBottom: '4px' 
+      marginBottom: '4px',
+      color: darkMode ? '#ffffff' : '#1e293b'
     },
     userEmail: { 
       color: darkMode ? '#cbd5e1' : '#475569',
@@ -308,9 +292,7 @@ function TableauBordPorteur({ user, onLogout }) {
     statValue: { 
       fontSize: 'clamp(28px, 5vw, 36px)', 
       fontWeight: 'bold', 
-      background: darkMode ? 'linear-gradient(135deg, #c084fc, #f472b6, #22d3ee)' : colors.gradient1,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      color: darkMode ? '#f1f5f9' : '#1e293b'
     },
     statLabel: { 
       fontSize: '13px', 
@@ -445,6 +427,14 @@ function TableauBordPorteur({ user, onLogout }) {
       color: darkMode ? '#94a3b8' : '#64748b',
       marginTop: '8px',
       fontWeight: '500'
+    },
+    soumissionsBadge: {
+      background: colors.primary,
+      color: 'white',
+      borderRadius: '20px',
+      padding: '2px 8px',
+      fontSize: '12px',
+      marginLeft: '8px'
     }
   };
 
@@ -500,10 +490,13 @@ function TableauBordPorteur({ user, onLogout }) {
             <FontAwesomeIcon icon={faRocket} /> Mon programme
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
-            <FontAwesomeIcon icon={faUpload} /> Mes soumissions ({soumissions.length})
+            <FontAwesomeIcon icon={faUpload} /> Mes soumissions 
+            {soumissions.filter(s => s.statut === 'soumise').length > 0 && (
+              <span style={styles.soumissionsBadge}>{soumissions.filter(s => s.statut === 'soumise').length}</span>
+            )}
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'analyses')} onClick={() => setActiveTab('analyses')}>
-            <FontAwesomeIcon icon={faEye} /> Analyses IA
+            <FontAwesomeIcon icon={faRobot} /> Analyses IA
           </button>
         </div>
 
@@ -524,7 +517,7 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={styles.statLabel}>Étapes restantes</div>
               </div>
               <div className="stat-card" style={styles.statCard}>
-                <div style={styles.statValue}>{soumissions.filter(s => s.statut === 'en_attente').length}</div>
+                <div style={styles.statValue}>{soumissions.filter(s => s.statut === 'soumise').length}</div>
                 <div style={styles.statLabel}>Soumissions en attente</div>
               </div>
             </div>
@@ -542,14 +535,14 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={styles.progressionFill} />
               </div>
               <div style={styles.progressionText}>
-               {stats.progression === 0 ? (
-               '🚀 Commencez votre parcours en soumettant votre premier document !'
-                   ) : stats.progression === 100 ? (
-              '🎉 Félicitations ! Vous avez terminé toutes les étapes du programme !'
-              ) : (
-             `📈 Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`
-                 )}
-            </div>
+                {stats.progression === 0 ? (
+                  'Commencez votre parcours en soumettant votre premier document !'
+                ) : stats.progression === 100 ? (
+                  'Félicitations ! Vous avez terminé toutes les étapes du programme !'
+                ) : (
+                  `Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`
+                )}
+              </div>
             </div>
 
             <Calendrier />
@@ -592,7 +585,8 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={styles.table}>
                     <thead>
-                      <tr><th style={styles.th}>Tâche</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date limite</th></tr></thead>
+                      <tr><th style={styles.th}>Tâche</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date limite</th></tr>
+                    </thead>
                     <tbody>
                       {taches.map(t => (
                         <tr key={t._id}>
@@ -616,24 +610,40 @@ function TableauBordPorteur({ user, onLogout }) {
         )}
 
         {/* MON PROGRAMME */}
-        {activeTab === 'programme' && (
-          <>
-            <div style={styles.programImagesContainer}>
-              <div className="program-card" style={styles.programImageCard}>
-                <img src="/prog1.png" alt="Master Plan" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
-                <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
-              </div>
-              <div className="program-card" style={styles.programImageCard}>
-                <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
-                <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
-              </div>
-            </div>
+{activeTab === 'programme' && (
+  <>
+    {/* Images du programme */}
+    <div style={styles.programImagesContainer}>
+      <div className="program-card" style={styles.programImageCard}>
+        <img src="/prog1.png" alt="Master Plan" style={styles.programImage} />
+        <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
+      </div>
+      <div className="program-card" style={styles.programImageCard}>
+        <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} />
+        <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
+      </div>
+    </div>
 
-            <EarlyStageTimeline />
-
-            <SuiviEtapes />
-          </>
-        )}
+    <EarlyStageTimeline />
+    <SuiviEtapes />
+  </>
+)}{/* MON PROGRAMME */}
+{activeTab === 'programme' && (
+  <>
+    <div style={styles.programImagesContainer}>
+      <div className="program-card" style={styles.programImageCard}>
+        <img src="/prog1.png" alt="Master Plan" style={styles.programImage} />
+        <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
+      </div>
+      <div className="program-card" style={styles.programImageCard}>
+        <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} />
+        <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
+      </div>
+    </div>
+    <EarlyStageTimeline />
+    <SuiviEtapes />
+  </>
+)}
 
         {/* MES SOUMISSIONS */}
         {activeTab === 'soumissions' && (

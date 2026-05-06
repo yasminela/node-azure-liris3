@@ -2,20 +2,19 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { auth, isAdmin } from '../middlewares/authentification.js';
 import AIAnalysis from '../models/AIAnalysis.js';
 import Notification from '../models/Notification.js';
 import Utilisateur from '../models/Utilisateur.js';
-import Evenement from '../models/Evenement.js';
-import Formation from '../models/Formation.js';
-import Etape from '../models/Etape.js';
 import {
   extraireTextePDF,
+  analyserPropositionValeur,
+  analyserFaisabilite,
   calculerScoreImpact,
-  recommanderFormations,
-  recommanderEvenements,
-  analyserSecteur,
-  genererFeedback
+  genererRecommandationsFormations,
+  genererFeedbackComplet,
+  analyserBMCPDF
 } from '../services/aiService.js';
 
 const router = express.Router();
@@ -28,7 +27,7 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random()  * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, 'bmc-' + uniqueSuffix + '.pdf');
   }
 });
@@ -45,71 +44,13 @@ const upload = multer({
   }
 });
 
-// Vérifier les retards des porteurs (tous les jours)
-const verifierRetards = async () => {
-  console.log('🔍 Vérification des retards des porteurs...');
-  
-  try {
-    const porteurs = await Utilisateur.find({ role: 'porteur' });
-    
-    for (const porteur of porteurs) {
-      // Récupérer les étapes non soumises avec date dépassée
-      const etapesEnRetard = await Etape.find({
-        porteurId: porteur._id,
-        statut: { $in: ['en_attente', 'en_cours'] },
-        dateLimite: { $lt: new Date() }
-      });
-      
-      if (etapesEnRetard.length > 0) {
-        // Notifier le porteur
-        await Notification.create({
-          utilisateurId: porteur._id,
-          titre: '⚠️ Retard dans vos soumissions',
-          message: `Vous avez ${etapesEnRetard.length} étape(s) en retard. Merci de les soumettre rapidement.`,
-          type: 'warning',
-          estLue: false,
-          lien: '/etapes'
-        });
-        
-        // Notifier les admins
-        const admins = await Utilisateur.find({ role: 'admin' });
-        for (const admin of admins) {
-          await Notification.create({
-            utilisateurId: admin._id,
-            titre: '⚠️ Porteur en retard',
-            message: `${porteur.firstName} ${porteur.lastName} a ${etapesEnRetard.length} étape(s) en retard.`,
-            type: 'warning',
-            estLue: false,
-            lien: '/admin#porteurs'
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Erreur vérification retards:', error);
-  }
-};
-
-// Lancer la vérification tous les jours à 9h
-const scheduleRetardCheck = () => {
-  const now = new Date();
-  const next9am = new Date();
-  next9am.setHours(9, 0, 0, 0);
-  if (now > next9am) next9am.setDate(next9am.getDate() + 1);
-  
-  const delay = next9am - now;
-  setTimeout(() => {
-    verifierRetards();
-    setInterval(verifierRetards, 24 * 60 * 60 * 1000);
-  }, delay);
-};
-
-scheduleRetardCheck();
+// ==================== ANALYSE BMC ====================
 
 // POST /api/ai/analyser-bmc
 router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
-  console.log('✅ Route /api/ai/analyser-bmc atteinte !');
+  console.log('📥 Route /api/ai/analyser-bmc atteinte !');
   console.log('📎 Fichier reçu:', req.file?.originalname);
+  console.log('👤 Porteur ID:', req.user?.id);
 
   try {
     if (!req.file) {
@@ -119,100 +60,74 @@ router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
       });
     }
 
-    // Extraire le texte du PDF
-    let texteBMC = "";
-    try {
-      texteBMC = await extraireTextePDF(req.file.path);
-    } catch (error) {
-      console.error('Erreur extraction texte:', error);
-      texteBMC = "";
-    }
+    // Utiliser l'analyse complète
+    const analyseComplete = await analyserBMCPDF(req.file.path);
     
-    // Calculer l'analyse
-    const score = calculerScoreImpact(texteBMC);
-    const formations = recommanderFormations(score, texteBMC);
-    const evenements = recommanderEvenements(score, texteBMC);
-    const secteur = analyserSecteur(texteBMC);
-    const feedback = genererFeedback(score, secteur);
-    const niveauImpact = score < 35 ? 'faible' : score < 65 ? 'moyen' : 'fort';
+    if (analyseComplete.erreur) {
+      return res.status(400).json({
+        success: false,
+        message: analyseComplete.erreur,
+        suggestion: analyseComplete.formations?.[0] || "Utilisez notre template BMC disponible sur la plateforme"
+      });
+    }
 
-    // Sauvegarder l'analyse
+    // Sauvegarder l'analyse en base
     const analyse = new AIAnalysis({
       porteurId: req.user.id,
       projetId: req.body.projetId || null,
       fichierBMC: req.file.originalname,
       cheminFichier: req.file.path,
-      scoreImpact: score,
-      niveauImpact: niveauImpact,
-      secteur: secteur,
-      formations: formations,
-      evenementsRecommandes: evenements,
-      feedback: feedback,
+      scoreImpact: analyseComplete.scoreImpact,
+      niveauImpact: analyseComplete.niveauImpact,
+      secteur: analyseComplete.secteur,
+      recommandations: analyseComplete.recommandations || [],
+      formations: analyseComplete.formations || [],
+      feedback: analyseComplete.feedback,
+      detailsAnalyse: analyseComplete.detailsAnalyse || {},
       dateAnalyse: new Date()
     });
     
     await analyse.save();
-    console.log('💾 Analyse sauvegardée en base');
+    console.log('💾 Analyse sauvegardée en base avec ID:', analyse._id);
 
-    // Notifier le porteur que l'analyse est terminée
+    // Notifier le porteur
     await Notification.create({
       utilisateurId: req.user.id,
       titre: '✅ Analyse IA terminée',
-      message: `Votre analyse BMC est terminée. Score: ${score}/100. Consultez vos recommandations.`,
-      type: 'success',
+      message: `Votre analyse BMC est terminée. Score: ${analyseComplete.scoreImpact}/100. ${analyseComplete.recommandations?.length || 0} recommandations disponibles.`,
+      type: 'succes',
       estLue: false,
       lien: '/#analyses'
     });
 
-    // Notifier les admins
+    // Notifier les admins avec les formations recommandées
     const admins = await Utilisateur.find({ role: 'admin' });
     for (const admin of admins) {
+      let formationsMessage = "";
+      if (analyseComplete.formations && analyseComplete.formations.length > 0) {
+        formationsMessage = `\n\n📚 Formations recommandées pour ce porteur :\n${analyseComplete.formations.map((f, i) => `${i+1}. ${f}`).join('\n')}`;
+      }
+      
       await Notification.create({
         utilisateurId: admin._id,
-        titre: '📊 Nouvelle analyse IA',
-        message: `${req.user.firstName} ${req.user.lastName} a soumis une analyse BMC. Score: ${score}/100`,
+        titre: '📊 Nouvelle analyse BMC à traiter',
+        message: `${req.user.firstName} ${req.user.lastName} a soumis son BMC. Score: ${analyseComplete.scoreImpact}/100.${formationsMessage}\n\n👉 Connectez-vous pour voir les détails et recommander des formations.`,
         type: 'info',
         estLue: false,
         lien: '/admin#analyses'
       });
     }
 
-    // Créer des événements recommandés si besoin
-    for (const eventData of evenements) {
-      const eventExistant = await Evenement.findOne({ 
-        titre: eventData.titre,
-        dateDebut: new Date(eventData.date)
-      });
-      
-      if (!eventExistant) {
-        await Evenement.create({
-          titre: eventData.titre,
-          description: eventData.description,
-          type: eventData.type || 'formation',
-          dateDebut: new Date(eventData.date),
-          dateFin: new Date(eventData.dateFin || eventData.date),
-          lieu: eventData.lieu || 'En ligne',
-          porteursAssignes: [req.user.id],
-          estPublic: false
-        });
-      } else {
-        // Ajouter le porteur à l'événement existant
-        if (!eventExistant.porteursAssignes.includes(req.user.id)) {
-          eventExistant.porteursAssignes.push(req.user.id);
-          await eventExistant.save();
-        }
-      }
-    }
-
     res.json({
       success: true,
       analyseId: analyse._id,
-      scoreImpact: score,
-      formations: formations,
-      evenements: evenements,
-      secteur: secteur,
-      feedback: feedback,
-      niveauImpact: niveauImpact
+      scoreImpact: analyseComplete.scoreImpact,
+      niveauImpact: analyseComplete.niveauImpact,
+      formations: analyseComplete.formations,
+      secteur: analyseComplete.secteur,
+      feedback: analyseComplete.feedback,
+      recommandations: analyseComplete.recommandations,
+      detailsAnalyse: analyseComplete.detailsAnalyse
     });
 
   } catch (error) {
@@ -224,18 +139,21 @@ router.post('/analyser-bmc', auth, upload.single('bmc'), async (req, res) => {
   }
 });
 
-// Récupérer l'historique des analyses du porteur
+// ==================== ROUTES PORTEUR ====================
+
 router.get('/mes-analyses', auth, async (req, res) => {
   try {
     const analyses = await AIAnalysis.find({ porteurId: req.user.id })
       .sort({ dateAnalyse: -1 });
     res.json(analyses);
   } catch (error) {
+    console.error('Erreur:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Récupérer toutes les analyses (admin)
+// ==================== ROUTES ADMIN ====================
+
 router.get('/toutes-les-analyses', auth, isAdmin, async (req, res) => {
   try {
     const analyses = await AIAnalysis.find({})
@@ -243,38 +161,20 @@ router.get('/toutes-les-analyses', auth, isAdmin, async (req, res) => {
       .populate('porteurId', 'firstName lastName email');
     res.json(analyses);
   } catch (error) {
+    console.error('Erreur:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Supprimer une analyse
-router.delete('/analyse/:id', auth, async (req, res) => {
+router.get('/analyses-porteur/:porteurId', auth, isAdmin, async (req, res) => {
   try {
-    const analyse = await AIAnalysis.findById(req.params.id);
-    
-    if (!analyse) {
-      return res.status(404).json({ success: false, message: 'Analyse non trouvée' });
-    }
-    
-    const isAdminUser = req.user.role === 'admin';
-    const isOwner = analyse.porteurId.toString() === req.user.id;
-    
-    if (!isAdminUser && !isOwner) {
-      return res.status(403).json({ success: false, message: 'Non autorisé' });
-    }
-    
-    if (analyse.cheminFichier && fs.existsSync(analyse.cheminFichier)) {
-      try {
-        fs.unlinkSync(analyse.cheminFichier);
-      } catch (fileError) {
-        console.log('⚠️ Fichier non trouvé:', fileError.message);
-      }
-    }
-    
-    await AIAnalysis.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Analyse supprimée avec succès' });
+    const analyses = await AIAnalysis.find({ porteurId: req.params.porteurId })
+      .sort({ dateAnalyse: -1 })
+      .populate('porteurId', 'firstName lastName email');
+    res.json(analyses);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Erreur:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -282,7 +182,7 @@ router.delete('/analyse/:id', auth, async (req, res) => {
 router.post('/analyse/:id/feedback', auth, isAdmin, async (req, res) => {
   try {
     const { feedback } = req.body;
-    const analyse = await AIAnalysis.findById(req.params.id);
+    const analyse = await AIAnalysis.findById(req.params.id).populate('porteurId');
     
     if (!analyse) {
       return res.status(404).json({ message: 'Analyse non trouvée' });
@@ -293,56 +193,52 @@ router.post('/analyse/:id/feedback', auth, isAdmin, async (req, res) => {
     await analyse.save();
     
     await Notification.create({
-      utilisateurId: analyse.porteurId,
-      titre: '💬 Feedback sur votre analyse IA',
-      message: `Un administrateur a commenté votre analyse BMC. Feedback: "${feedback}"`,
+      utilisateurId: analyse.porteurId._id,
+      titre: '💬 Feedback sur votre analyse BMC',
+      message: `Un administrateur a commenté votre analyse BMC. Score: ${analyse.scoreImpact}/100. Feedback: "${feedback.substring(0, 100)}${feedback.length > 100 ? '...' : ''}"`,
       type: 'info',
       estLue: false,
       lien: '/#analyses'
     });
     
-    res.json({ success: true, message: 'Feedback envoyé au porteur' });
+    res.json({ success: true, message: 'Feedback envoyé' });
   } catch (error) {
+    console.error('Erreur:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Générer un rapport PDF (récupérer les données)
-router.get('/analyse/:id/rapport', auth, async (req, res) => {
+// Envoyer des recommandations de formations (admin)
+router.post('/envoyer-recommandations', auth, isAdmin, async (req, res) => {
   try {
-    const analyse = await AIAnalysis.findById(req.params.id)
-      .populate('porteurId', 'firstName lastName email');
+    const { porteurId, formations } = req.body;
     
-    if (!analyse) {
-      return res.status(404).json({ message: 'Analyse non trouvée' });
+    const porteur = await Utilisateur.findById(porteurId);
+    if (!porteur) {
+      return res.status(404).json({ message: 'Porteur non trouvé' });
     }
     
-    // Vérifier les droits (admin ou propriétaire)
-    const isAdminUser = req.user.role === 'admin';
-    const isOwner = analyse.porteurId._id.toString() === req.user.id;
-    
-    if (!isAdminUser && !isOwner) {
-      return res.status(403).json({ message: 'Non autorisé' });
-    }
-    
-    res.json({
-      success: true,
-      analyse: {
-        id: analyse._id,
-        date: analyse.dateAnalyse,
-        porteur: analyse.porteurId,
-        fichier: analyse.fichierBMC,
-        score: analyse.scoreImpact,
-        niveau: analyse.niveauImpact,
-        secteur: analyse.secteur,
-        formations: analyse.formations,
-        feedbackIA: analyse.feedback,
-        feedbackAdmin: analyse.feedbackAdmin
-      }
+    let message = `📚 **Recommandations de formations personnalisées**\n\n`;
+    message += `Suite à l'analyse de votre BMC, voici les formations recommandées :\n\n`;
+    formations.forEach((f, i) => {
+      message += `${i+1}. ${f}\n`;
     });
+    message += `\n👉 Connectez-vous à votre espace pour plus de détails.`;
+    
+    await Notification.create({
+      utilisateurId: porteurId,
+      titre: '📚 Nouvelles formations recommandées',
+      message: message,
+      type: 'info',
+      estLue: false,
+      lien: '/#analyses'
+    });
+    
+    res.json({ success: true, message: `${formations.length} formation(s) recommandée(s)` });
   } catch (error) {
-    console.error('Erreur génération rapport:', error);
+    console.error('Erreur:', error);
     res.status(500).json({ message: error.message });
   }
 });
+
 export default router;
