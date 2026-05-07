@@ -252,18 +252,6 @@ function TableauBordPorteur({ user, onLogout }) {
       fontSize: '11px',
       display: 'inline-block'
     },
-    btnPrimary: {
-      background: colors.gradient1,
-      color: 'white',
-      border: 'none',
-      padding: '12px 24px',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px'
-    },
     statsGrid: { 
       display: 'grid', 
       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
@@ -478,6 +466,7 @@ function TableauBordPorteur({ user, onLogout }) {
       <Navbar user={currentUser} onLogout={onLogout} />
       
       <div style={styles.container}>
+        {/* Header avec avatar - SANS le bouton Nouveau projet */}
         <div style={styles.headerCard}>
           <div style={styles.userInfo}>
             <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} size="large" />
@@ -493,11 +482,10 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
             </div>
           </div>
-          <button className="btn-shine" onClick={() => { setSelectedProjet(null); setShowCreerProjet(true); }} style={styles.btnPrimary}>
-            <FontAwesomeIcon icon={faBuilding} /> Nouveau projet
-          </button>
+          {/* Bouton Nouveau projet supprimé - il est maintenant dans la section Mes projets */}
         </div>
 
+        {/* Onglets */}
         <div style={styles.tabsContainer}>
           <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faChartLine} /> Tableau de bord
@@ -558,7 +546,7 @@ function TableauBordPorteur({ user, onLogout }) {
 
             <Calendrier />
 
-            {/* Section Mes projets avec modif/suppression */}
+            {/* Section Mes projets avec bouton de création */}
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>
                 <FontAwesomeIcon icon={faBuilding} color={colors.primary} /> 
