@@ -9,8 +9,7 @@ const utilisateurSchema = new mongoose.Schema({
   telephone: { type: String, default: '' },
   faculte: { type: String, default: '' },
   residence: { type: String, default: '' },
-  nomProjet: { type: String, default: '' },
-  avatar: { type: String, default: null }  // ← AJOUTEZ CETTE LIGNE
-}, { timestamps: true });
+  nomProjet: { type: String, default: '' }
+}, { collection: 'utilisateurs' });
 
 export default mongoose.model('Utilisateur', utilisateurSchema);
