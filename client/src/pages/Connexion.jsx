@@ -1,27 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faEnvelope, faLock, faEye, faEyeSlash, faRocket, 
+  faChartLine, faUsers, faLightbulb, faArrowRight
+} from '@fortawesome/free-solid-svg-icons';
 
-function Connexion({ onLogin }) {
-  const { darkMode } = useTheme();
+function Connexion() {
   const [email, setEmail] = useState('');
-  const [motDePasse, setMotDePasse] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [logoHover, setLogoHover] = useState(false);
+  const navigate = useNavigate();
+
+  // Animation des particules
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const newParticles = [];
+    for (let i = 0; i < 50; i++) {
+      newParticles.push({
+        id: i,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        size: Math.random() * 3 + 1,
+        delay: Math.random() * 10,
+        duration: Math.random() * 10 + 5
+      });
+    }
+    setParticles(newParticles);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
+    
     try {
-      const response = await api.post('/auth/login', { email, motDePasse });
-      if (response.data && response.data.utilisateur) {
-        onLogin(response.data.utilisateur, response.data.token);
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      if (user.role === 'admin') {
+        navigate('/admin');
       } else {
-        setError('Réponse invalide du serveur');
+        navigate('/porteur');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
@@ -32,218 +62,330 @@ function Connexion({ onLogin }) {
 
   const styles = {
     container: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
       minHeight: '100vh',
-      background: darkMode 
-        ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' 
-        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     },
+    // Cercles flottants
+    circle1: {
+      position: 'absolute',
+      top: '-20%',
+      right: '-10%',
+      width: '400px',
+      height: '400px',
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.1)',
+      animation: 'float1 15s ease-in-out infinite'
+    },
+    circle2: {
+      position: 'absolute',
+      bottom: '-20%',
+      left: '-10%',
+      width: '500px',
+      height: '500px',
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.08)',
+      animation: 'float2 20s ease-in-out infinite'
+    },
+    circle3: {
+      position: 'absolute',
+      top: '50%',
+      left: '30%',
+      width: '250px',
+      height: '250px',
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.05)',
+      animation: 'float3 12s ease-in-out infinite'
+    },
+    // Particules
+    particle: (left, top, size, delay, duration) => ({
+      position: 'absolute',
+      width: `${size}px`,
+      height: `${size}px`,
+      background: 'rgba(255,255,255,0.4)',
+      borderRadius: '50%',
+      left: `${left}%`,
+      top: `${top}%`,
+      animation: `floatParticle ${duration}s ease-in-out infinite`,
+      animationDelay: `${delay}s`
+    }),
+    // Carte
     card: {
-      background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '24px',
-      padding: 'clamp(30px, 5vw, 48px)',
-      maxWidth: '450px',
-      width: '90%',
-      boxShadow: darkMode 
-        ? '0 25px 50px -12px rgba(0,0,0,0.5)' 
-        : '0 25px 50px -12px rgba(0,0,0,0.25)'
+      position: 'relative',
+      zIndex: 10,
+      width: '100%',
+      maxWidth: '440px',
+      margin: '20px',
+      background: 'rgba(255, 255, 255, 0.98)',
+      borderRadius: '32px',
+      padding: '44px',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+      transition: 'transform 0.3s ease, box-shadow 0.3s ease'
     },
-    logoContainer: {
+    header: {
       textAlign: 'center',
       marginBottom: '32px'
     },
+    logoContainer: {
+      marginBottom: '24px',
+      cursor: 'pointer'
+    },
     logo: {
-      height: '70px',
-      width: '70px',
+      width: '80px',
+      height: '80px',
+      margin: '0 auto',
+      transition: 'all 0.3s ease',
+      transform: logoHover ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
+      filter: logoHover ? 'drop-shadow(0 10px 20px rgba(102,126,234,0.4))' : 'drop-shadow(0 4px 10px rgba(0,0,0,0.1))'
+    },
+    logoImg: {
+      width: '100%',
+      height: '100%',
       objectFit: 'contain',
-      margin: '0 auto 16px'
+      borderRadius: '20px'
     },
     title: {
       fontSize: '28px',
       fontWeight: 'bold',
-      color: darkMode ? '#ffffff' : '#1e293b',
-      textAlign: 'center',
+      color: '#1e293b',
       marginBottom: '8px'
     },
     subtitle: {
       fontSize: '14px',
-      color: darkMode ? '#94a3b8' : '#64748b',
-      textAlign: 'center',
-      marginBottom: '32px'
+      color: '#64748b'
     },
-    formGroup: {
-      marginBottom: '24px'
+    inputGroup: {
+      marginBottom: '20px'
     },
     label: {
       display: 'block',
-      marginBottom: '8px',
-      fontSize: '14px',
+      fontSize: '13px',
       fontWeight: '500',
-      color: darkMode ? '#cbd5e1' : '#475569'
+      color: '#334155',
+      marginBottom: '8px'
     },
-    inputContainer: {
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center'
+    inputWrapper: {
+      position: 'relative'
     },
     inputIcon: {
       position: 'absolute',
       left: '14px',
-      color: darkMode ? '#94a3b8' : '#64748b'
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: '#94a3b8',
+      fontSize: '16px'
     },
     input: {
       width: '100%',
       padding: '14px 14px 14px 42px',
-      border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-      borderRadius: '12px',
-      fontSize: '15px',
-      backgroundColor: darkMode ? '#0f172a' : '#ffffff',
-      color: darkMode ? '#ffffff' : '#1e293b',
-      transition: 'all 0.3s ease',
-      outline: 'none'
+      border: '1px solid #e2e8f0',
+      borderRadius: '14px',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'all 0.3s',
+      backgroundColor: '#f8fafc'
     },
     passwordToggle: {
       position: 'absolute',
       right: '14px',
+      top: '50%',
+      transform: 'translateY(-50%)',
       cursor: 'pointer',
-      color: darkMode ? '#94a3b8' : '#64748b'
+      color: '#94a3b8'
     },
-    errorMsg: {
-      background: darkMode ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
-      color: '#ef4444',
-      padding: '12px',
-      borderRadius: '12px',
-      textAlign: 'center',
-      marginBottom: '20px',
-      fontSize: '14px'
-    },
-    button: {
+    btnLogin: {
       width: '100%',
       padding: '14px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #667eea, #764ba2)',
       color: 'white',
       border: 'none',
-      borderRadius: '12px',
+      borderRadius: '14px',
       fontSize: '16px',
       fontWeight: 'bold',
       cursor: 'pointer',
-      transition: 'transform 0.2s ease',
+      transition: 'all 0.3s',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '8px'
+      gap: '10px'
     },
-    buttonDisabled: {
-      opacity: 0.7,
-      cursor: 'not-allowed'
+    errorMessage: {
+      background: '#fee2e2',
+      color: '#dc2626',
+      padding: '12px',
+      borderRadius: '12px',
+      fontSize: '13px',
+      marginBottom: '20px',
+      textAlign: 'center'
+    },
+    features: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '24px',
+      marginTop: '28px',
+      paddingTop: '20px',
+      borderTop: '1px solid #e2e8f0'
+    },
+    feature: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '11px',
+      color: '#64748b'
     },
     footer: {
-      marginTop: '24px',
+      marginTop: '20px',
       textAlign: 'center',
-      fontSize: '12px',
-      color: darkMode ? '#94a3b8' : '#64748b'
+      fontSize: '11px',
+      color: '#94a3b8'
     }
   };
 
   return (
     <div style={styles.container}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, -20px) rotate(10deg); }
+          }
+          @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(40px, 20px) rotate(-10deg); }
+          }
+          @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -15px) scale(1.1); }
+          }
+          @keyframes floatParticle {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            75% { transform: translateY(10px) translateX(-10px); }
+          }
+          input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+          }
+          button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+          }
+        `
+      }} />
+
+      {/* Cercles décoratifs */}
+      <div style={styles.circle1} />
+      <div style={styles.circle2} />
+      <div style={styles.circle3} />
+
+      {/* Particules */}
+      {particles.map(p => (
+        <div key={p.id} style={styles.particle(p.left, p.top, p.size, p.delay, p.duration)} />
+      ))}
+
+      {/* Formulaire */}
       <div style={styles.card}>
-        <div style={styles.logoContainer}>
-          <img src="/logo-incubiny.png" alt="Incubiny" style={styles.logo} />
+        <div style={styles.header}>
+          <div 
+            style={styles.logoContainer}
+            onMouseEnter={() => setLogoHover(true)}
+            onMouseLeave={() => setLogoHover(false)}
+          >
+            <div style={styles.logo}>
+              <img 
+                src="/logo-incubiny.png" 
+                alt="Incubiny" 
+                style={styles.logoImg}
+                onError={(e) => {
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23667eea" rx="20"/%3E%3Ctext x="50" y="68" text-anchor="middle" fill="white" font-size="40" font-weight="bold"%3EI%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </div>
+          </div>
           <h1 style={styles.title}>Incubiny</h1>
           <p style={styles.subtitle}>Plateforme d'incubation de startups</p>
         </div>
 
-        {error && <div style={styles.errorMsg}>{error}</div>}
+        {error && (
+          <div style={styles.errorMessage}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
-          <div style={styles.formGroup}>
+          <div style={styles.inputGroup}>
             <label style={styles.label}>Email</label>
-            <div style={styles.inputContainer}>
-              <FontAwesomeIcon icon={faEnvelope} size="16px" style={styles.inputIcon} />
+            <div style={styles.inputWrapper}>
+              <FontAwesomeIcon icon={faEnvelope} style={styles.inputIcon} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
+                placeholder="exemple@incubiny.com"
                 style={styles.input}
-                placeholder="admin@incubiny.com"
+                required
               />
             </div>
           </div>
 
-          <div style={styles.formGroup}>
+          <div style={styles.inputGroup}>
             <label style={styles.label}>Mot de passe</label>
-            <div style={styles.inputContainer}>
-              <FontAwesomeIcon icon={faLock} size="16px" style={styles.inputIcon} />
+            <div style={styles.inputWrapper}>
+              <FontAwesomeIcon icon={faLock} style={styles.inputIcon} />
               <input
                 type={showPassword ? 'text' : 'password'}
-                value={motDePasse}
-                onChange={(e) => setMotDePasse(e.target.value)}
-                required
-                style={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                style={styles.input}
+                required
               />
               <div style={styles.passwordToggle} onClick={() => setShowPassword(!showPassword)}>
-                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} size="16px" />
+                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
               </div>
             </div>
           </div>
 
           <button
             type="submit"
+            style={styles.btnLogin}
             disabled={loading}
-            style={{
-              ...styles.button,
-              ...(loading ? styles.buttonDisabled : {})
-            }}
-            className="btn-shine"
           >
             {loading ? (
-              <>⏳ Connexion...</>
+              <>Connexion en cours...</>
             ) : (
-              <>🔓 Se connecter</>
+              <>
+                <FontAwesomeIcon icon={faRocket} />
+                Se connecter
+                <FontAwesomeIcon icon={faArrowRight} size="sm" />
+              </>
             )}
           </button>
         </form>
 
+        <div style={styles.features}>
+          <div style={styles.feature}>
+            <FontAwesomeIcon icon={faChartLine} size="xs" />
+            <span>Suivi temps réel</span>
+          </div>
+          <div style={styles.feature}>
+            <FontAwesomeIcon icon={faUsers} size="xs" />
+            <span>Accompagnement</span>
+          </div>
+          <div style={styles.feature}>
+            <FontAwesomeIcon icon={faLightbulb} size="xs" />
+            <span>Analyses IA</span>
+          </div>
+        </div>
+
         <div style={styles.footer}>
-          <p>© {new Date().getFullYear()} Incubiny - Tous droits réservés</p>
+          © 2026 Incubiny - Tous droits réservés
         </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .btn-shine {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-          }
-          .btn-shine::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
-          }
-          .btn-shine:hover::before {
-            left: 100%;
-          }
-          .btn-shine:hover {
-            transform: translateY(-2px);
-          }
-          input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            outline: none;
-          }
-        `
-      }} />
     </div>
   );
 }

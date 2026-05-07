@@ -16,7 +16,8 @@ import {
   faChartLine, faFileAlt, faEye, faCheck, faTimes, 
   faExclamationTriangle, faBuilding, faTasks, faUpload,
   faRocket, faClipboardList, faUserGraduate, faAward,
-  faCalendar, faBell, faHistory, faSpinner, faRobot
+  faCalendar, faBell, faHistory, faSpinner, faRobot,
+  faEdit, faTrash, faPlus
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordPorteur({ user, onLogout }) {
@@ -25,6 +26,8 @@ function TableauBordPorteur({ user, onLogout }) {
   const [taches, setTaches] = useState([]);
   const [etapes, setEtapes] = useState([]);
   const [showCreerProjet, setShowCreerProjet] = useState(false);
+  const [showEditProjet, setShowEditProjet] = useState(false);
+  const [selectedProjet, setSelectedProjet] = useState(null);
   const [stats, setStats] = useState({ projetsCount: 0, tachesCount: 0, etapesCount: 0, progression: 0 });
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(user);
@@ -109,6 +112,19 @@ function TableauBordPorteur({ user, onLogout }) {
     }
   };
 
+  const handleDeleteProjet = async (projetId) => {
+    if (!confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) return;
+    
+    try {
+      await api.delete(`/projets/${projetId}`);
+      showToastMessage('success', '✅ Projet supprimé avec succès');
+      loadData();
+    } catch (error) {
+      console.error('Erreur suppression:', error);
+      showToastMessage('error', '❌ Erreur lors de la suppression');
+    }
+  };
+
   const getStatutBadge = (statut) => {
     const badges = {
       en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faExclamationTriangle },
@@ -124,7 +140,6 @@ function TableauBordPorteur({ user, onLogout }) {
     );
   };
 
-  // LOADER MODERNE
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: darkMode ? '#0f172a' : '#f8fafc' }}>
@@ -161,33 +176,11 @@ function TableauBordPorteur({ user, onLogout }) {
             <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
             Chargement de votre espace porteur...
           </p>
-          <div style={{
-            width: '250px',
-            height: '3px',
-            background: darkMode ? '#334155' : '#e2e8f0',
-            borderRadius: '10px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '60%',
-              height: '100%',
-              background: 'linear-gradient(90deg, #9333ea, #ec4899, #06b6d4)',
-              animation: 'loading 1.5s ease-in-out infinite'
-            }} />
-          </div>
         </div>
         <style dangerouslySetInnerHTML={{
           __html: `
             @keyframes spin { 100% { transform: rotate(360deg); } }
-            @keyframes pulse { 
-              0%, 100% { transform: scale(1); } 
-              50% { transform: scale(1.1); } 
-            }
-            @keyframes loading { 
-              0% { width: 0%; } 
-              50% { width: 80%; } 
-              100% { width: 100%; } 
-            }
+            @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
           `
         }} />
       </div>
@@ -357,20 +350,46 @@ function TableauBordPorteur({ user, onLogout }) {
       borderLeft: `4px solid ${colors.primary}`,
       paddingLeft: '16px'
     },
-    table: { width: '100%', borderCollapse: 'collapse' },
-    th: { 
-      padding: '12px', 
-      textAlign: 'left', 
-      color: darkMode ? '#cbd5e1' : '#64748b',
-      fontWeight: '600', 
-      fontSize: '13px', 
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}` 
+    projetCard: {
+      background: darkMode ? '#0f172a' : '#f8fafc',
+      borderRadius: '16px',
+      padding: '16px',
+      marginBottom: '12px',
+      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: '16px'
     },
-    td: { 
-      padding: '12px', 
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, 
-      fontSize: '14px', 
-      color: darkMode ? '#e2e8f0' : '#475569'
+    projetInfo: { flex: 1 },
+    projetTitre: { fontSize: '16px', fontWeight: 'bold', color: darkMode ? '#ffffff' : '#1e293b', marginBottom: '8px' },
+    projetDescription: { fontSize: '13px', color: darkMode ? '#94a3b8' : '#64748b', marginBottom: '8px' },
+    projetMeta: { display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '12px', color: darkMode ? '#94a3b8' : '#64748b' },
+    projetActions: { display: 'flex', gap: '8px' },
+    btnEdit: {
+      background: '#f59e0b',
+      color: 'white',
+      border: 'none',
+      padding: '8px 12px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '12px'
+    },
+    btnDelete: {
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      padding: '8px 12px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '12px'
     },
     emptyState: { 
       textAlign: 'center', 
@@ -443,7 +462,6 @@ function TableauBordPorteur({ user, onLogout }) {
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          @keyframes loading { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
           @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
           .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
           .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
@@ -460,7 +478,6 @@ function TableauBordPorteur({ user, onLogout }) {
       <Navbar user={currentUser} onLogout={onLogout} />
       
       <div style={styles.container}>
-        {/* Header avec avatar */}
         <div style={styles.headerCard}>
           <div style={styles.userInfo}>
             <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} size="large" />
@@ -476,12 +493,11 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
             </div>
           </div>
-          <button className="btn-shine" onClick={() => setShowCreerProjet(true)} style={styles.btnPrimary}>
+          <button className="btn-shine" onClick={() => { setSelectedProjet(null); setShowCreerProjet(true); }} style={styles.btnPrimary}>
             <FontAwesomeIcon icon={faBuilding} /> Nouveau projet
           </button>
         </div>
 
-        {/* Onglets */}
         <div style={styles.tabsContainer}>
           <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faChartLine} /> Tableau de bord
@@ -500,7 +516,6 @@ function TableauBordPorteur({ user, onLogout }) {
           </button>
         </div>
 
-        {/* TABLEAU DE BORD */}
         {activeTab === 'dashboard' && (
           <>
             <div style={styles.statsGrid}>
@@ -535,42 +550,58 @@ function TableauBordPorteur({ user, onLogout }) {
                 <div style={styles.progressionFill} />
               </div>
               <div style={styles.progressionText}>
-                {stats.progression === 0 ? (
-                  'Commencez votre parcours en soumettant votre premier document !'
-                ) : stats.progression === 100 ? (
-                  'Félicitations ! Vous avez terminé toutes les étapes du programme !'
-                ) : (
-                  `Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`
-                )}
+                {stats.progression === 0 ? '🚀 Commencez votre parcours en soumettant votre premier document !' : 
+                 stats.progression === 100 ? '🎉 Félicitations ! Vous avez terminé toutes les étapes !' : 
+                 `📈 Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`}
               </div>
             </div>
 
             <Calendrier />
 
+            {/* Section Mes projets avec modif/suppression */}
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>
                 <FontAwesomeIcon icon={faBuilding} color={colors.primary} /> 
                 Mes projets
               </div>
               {projets.length === 0 ? (
-                <div style={styles.emptyState}>📭 Aucun projet pour le moment</div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr><th style={styles.th}>Projet</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date</th></tr></thead>
-                    <tbody>
-                      {projets.map(p => (
-                        <tr key={p._id}>
-                          <td style={styles.td}><strong>{p.titre || p.nomProjet}</strong></td>
-                          <td style={styles.td}>{p.description || '—'}</td>
-                          <td style={styles.td}>{getStatutBadge(p.statut)}</td>
-                          <td style={styles.td}>{new Date(p.dateDebut).toLocaleDateString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={styles.emptyState}>
+                  <p>📭 Aucun projet pour le moment</p>
+                  <button className="btn-shine" onClick={() => { setSelectedProjet(null); setShowCreerProjet(true); }} style={{ ...styles.btnEdit, marginTop: '16px' }}>
+                    <FontAwesomeIcon icon={faPlus} /> Créer mon premier projet
+                  </button>
                 </div>
+              ) : (
+                projets.map(p => (
+                  <div key={p._id} style={styles.projetCard}>
+                    <div style={styles.projetInfo}>
+                      <div style={styles.projetTitre}>{p.titre || p.nomProjet}</div>
+                      <div style={styles.projetDescription}>{p.description || '—'}</div>
+                      <div style={styles.projetMeta}>
+                        <span>📂 {p.secteur || 'Secteur non spécifié'}</span>
+                        {p.budget && <span>💰 {p.budget.toLocaleString()} €</span>}
+                        <span>{getStatutBadge(p.statut)}</span>
+                      </div>
+                    </div>
+                    <div style={styles.projetActions}>
+                      {p.statut === 'en_attente' && (
+                        <>
+                          <button className="btn-shine" onClick={() => { setSelectedProjet(p); setShowEditProjet(true); }} style={styles.btnEdit}>
+                            <FontAwesomeIcon icon={faEdit} size="sm" /> Modifier
+                          </button>
+                          <button className="btn-shine" onClick={() => handleDeleteProjet(p._id)} style={styles.btnDelete}>
+                            <FontAwesomeIcon icon={faTrash} size="sm" /> Supprimer
+                          </button>
+                        </>
+                      )}
+                      {p.statut !== 'en_attente' && (
+                        <span style={{ fontSize: '12px', color: darkMode ? '#64748b' : '#94a3b8' }}>
+                          {p.statut === 'valide' ? '✅ Projet validé' : '❌ Projet non retenu'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
@@ -582,80 +613,49 @@ function TableauBordPorteur({ user, onLogout }) {
               {taches.length === 0 ? (
                 <div style={styles.emptyState}>📭 Aucune tâche pour le moment</div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr><th style={styles.th}>Tâche</th><th style={styles.th}>Description</th><th style={styles.th}>Statut</th><th style={styles.th}>Date limite</th></tr>
-                    </thead>
-                    <tbody>
-                      {taches.map(t => (
-                        <tr key={t._id}>
-                          <td style={styles.td}><strong>{t.titre}</strong></td>
-                          <td style={styles.td}>{t.description || '—'}</td>
-                          <td style={styles.td}>
-                            {t.estComplete ? 
-                              <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: '20px' }}>✅ Complétée</span> :
-                              <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: '20px' }}>⏳ En cours</span>
-                            }
-                          </td>
-                          <td style={styles.td}>{t.dateLimite ? new Date(t.dateLimite).toLocaleDateString() : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                taches.map(t => (
+                  <div key={t._id} style={{ ...styles.projetCard, justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={styles.projetTitre}>{t.titre}</div>
+                      <div style={styles.projetDescription}>{t.description || '—'}</div>
+                      <div style={styles.projetMeta}>
+                        {t.dateLimite && <span>📅 {new Date(t.dateLimite).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                    <div>
+                      {t.estComplete ? 
+                        <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>✅ Complétée</span> :
+                        <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>⏳ En cours</span>
+                      }
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </>
         )}
 
-        {/* MON PROGRAMME */}
-{activeTab === 'programme' && (
-  <>
-    {/* Images du programme */}
-    <div style={styles.programImagesContainer}>
-      <div className="program-card" style={styles.programImageCard}>
-        <img src="/prog1.png" alt="Master Plan" style={styles.programImage} />
-        <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
-      </div>
-      <div className="program-card" style={styles.programImageCard}>
-        <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} />
-        <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
-      </div>
-    </div>
-
-    <EarlyStageTimeline />
-    <SuiviEtapes />
-  </>
-)}{/* MON PROGRAMME */}
-{activeTab === 'programme' && (
-  <>
-    <div style={styles.programImagesContainer}>
-      <div className="program-card" style={styles.programImageCard}>
-        <img src="/prog1.png" alt="Master Plan" style={styles.programImage} />
-        <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
-      </div>
-      <div className="program-card" style={styles.programImageCard}>
-        <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} />
-        <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
-      </div>
-    </div>
-    <EarlyStageTimeline />
-    <SuiviEtapes />
-  </>
-)}
-
-        {/* MES SOUMISSIONS */}
-        {activeTab === 'soumissions' && (
-          <ValidationDocument 
-            onValidate={() => {
-              loadSoumissions();
-              loadData();
-            }} 
-          />
+        {activeTab === 'programme' && (
+          <>
+            <div style={styles.programImagesContainer}>
+              <div className="program-card" style={styles.programImageCard}>
+                <img src="/prog1.png" alt="Master Plan" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
+                <p style={styles.programCaption}>Le Master Plan : 3 Phases de Transformation</p>
+              </div>
+              <div className="program-card" style={styles.programImageCard}>
+                <img src="/prog2.png" alt="Écosystème Dual" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
+                <p style={styles.programCaption}>La Matrice de Soutien : Un Écosystème Dual</p>
+              </div>
+            </div>
+            <EarlyStageTimeline />
+            <SuiviEtapes />
+          </>
         )}
 
-        {/* ANALYSES IA */}
+        {activeTab === 'soumissions' && (
+          <ValidationDocument onValidate={() => { loadSoumissions(); loadData(); }} />
+        )}
+
         {activeTab === 'analyses' && <GestionAnalysesIA />}
       </div>
 
@@ -664,10 +664,15 @@ function TableauBordPorteur({ user, onLogout }) {
       {showCreerProjet && (
         <CreerProjet 
           onClose={() => setShowCreerProjet(false)} 
-          onSuccess={() => {
-            loadData();
-            showToastMessage('success', '✅ Projet créé avec succès !');
-          }} 
+          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet créé avec succès !'); }} 
+        />
+      )}
+
+      {showEditProjet && selectedProjet && (
+        <CreerProjet 
+          projetExistant={selectedProjet}
+          onClose={() => { setShowEditProjet(false); setSelectedProjet(null); }} 
+          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet modifié avec succès !'); }} 
         />
       )}
 

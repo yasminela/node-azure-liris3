@@ -1,218 +1,219 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faTimes, faSpinner, faEuroSign, faAlignLeft } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSave, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 
-function CreerProjet({ onClose, onSuccess }) {
+function CreerProjet({ projetExistant, onClose, onSuccess }) {
   const { darkMode } = useTheme();
-  const [formData, setFormData] = useState({
-    titre: '',
-    description: '',
-    budget: ''
-  });
+  const [titre, setTitre] = useState('');
+  const [description, setDescription] = useState('');
+  const [secteur, setSecteur] = useState('');
+  const [budget, setBudget] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (projetExistant) {
+      setTitre(projetExistant.titre || '');
+      setDescription(projetExistant.description || '');
+      setSecteur(projetExistant.secteur || '');
+      setBudget(projetExistant.budget || '');
+      setIsEditing(true);
+    }
+  }, [projetExistant]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
     
     try {
-      await api.post('/projets', formData);
-      alert('✅ Projet créé avec succès ! En attente de validation par l\'admin.');
+      if (isEditing) {
+        // Modifier le projet existant
+        await api.put(`/projets/${projetExistant._id}`, {
+          titre, description, secteur, budget
+        });
+        alert('✅ Projet modifié avec succès !');
+      } else {
+        // Créer un nouveau projet
+        await api.post('/projets', {
+          titre, description, secteur, budget
+        });
+        alert('✅ Projet créé avec succès !');
+      }
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      setError(error.response?.data?.message || 'Erreur lors de la création');
+      console.error('Erreur:', error);
+      alert('❌ Erreur: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) return;
+    
+    setLoading(true);
+    try {
+      await api.delete(`/projets/${projetExistant._id}`);
+      alert('✅ Projet supprimé avec succès !');
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('❌ Erreur lors de la suppression');
     } finally {
       setLoading(false);
     }
   };
 
   const styles = {
-    modal: {
+    modalOverlay: {
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.6)',
+      background: 'rgba(0,0,0,0.5)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(5px)'
+      zIndex: 1000
     },
     modalContent: {
       background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '24px',
-      padding: 'clamp(20px, 5vw, 32px)',
+      borderRadius: '20px',
+      padding: '24px',
       maxWidth: '500px',
       width: '90%',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+      maxHeight: '80vh',
+      overflowY: 'auto'
     },
     title: {
-      fontSize: '24px',
+      fontSize: '20px',
       fontWeight: 'bold',
-      color: darkMode ? '#ffffff' : '#1e293b',
-      marginBottom: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px'
-    },
-    subtitle: {
-      fontSize: '14px',
-      color: darkMode ? '#94a3b8' : '#64748b',
-      marginBottom: '24px',
-      paddingBottom: '16px',
-      borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-    },
-    formGroup: {
-      marginBottom: '20px'
-    },
-    label: {
-      display: 'block',
-      marginBottom: '8px',
-      fontWeight: '600',
-      color: darkMode ? '#e2e8f0' : '#475569',
-      fontSize: '14px'
+      marginBottom: '20px',
+      color: darkMode ? '#ffffff' : '#1e293b'
     },
     input: {
       width: '100%',
-      padding: '12px 16px',
+      padding: '12px',
+      borderRadius: '10px',
       border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-      borderRadius: '12px',
-      fontSize: '14px',
-      backgroundColor: darkMode ? '#0f172a' : 'white',
+      background: darkMode ? '#0f172a' : 'white',
       color: darkMode ? '#f1f5f9' : '#1e293b',
-      transition: 'all 0.2s ease'
+      marginBottom: '16px',
+      fontSize: '14px'
     },
     textarea: {
       width: '100%',
-      padding: '12px 16px',
+      padding: '12px',
+      borderRadius: '10px',
       border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-      borderRadius: '12px',
-      fontSize: '14px',
-      backgroundColor: darkMode ? '#0f172a' : 'white',
+      background: darkMode ? '#0f172a' : 'white',
       color: darkMode ? '#f1f5f9' : '#1e293b',
-      minHeight: '100px',
-      fontFamily: 'inherit',
-      resize: 'vertical'
+      marginBottom: '16px',
+      fontSize: '14px',
+      resize: 'vertical',
+      minHeight: '100px'
     },
     buttonGroup: {
       display: 'flex',
       gap: '12px',
-      marginTop: '24px'
+      marginTop: '16px'
     },
-    submitBtn: {
-      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-      color: 'white',
-      padding: '12px 24px',
-      border: 'none',
-      borderRadius: '12px',
-      cursor: 'pointer',
+    btnSave: {
       flex: 1,
-      fontWeight: 'bold',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px'
-    },
-    cancelBtn: {
-      background: darkMode ? '#334155' : '#e2e8f0',
-      color: darkMode ? '#f1f5f9' : '#475569',
-      padding: '12px 24px',
-      border: 'none',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      flex: 1,
-      fontWeight: 'bold',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px'
-    },
-    errorMsg: {
-      background: '#fee2e2',
-      color: '#dc2626',
       padding: '12px',
-      borderRadius: '12px',
-      marginBottom: '20px',
-      textAlign: 'center'
+      background: '#10b981',
+      color: 'white',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      fontWeight: 'bold'
+    },
+    btnDelete: {
+      padding: '12px',
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px'
+    },
+    btnCancel: {
+      flex: 1,
+      padding: '12px',
+      background: '#e2e8f0',
+      color: '#475569',
+      border: 'none',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      fontWeight: 'bold'
     }
   };
 
   return (
-    <div style={styles.modal}>
-      <div style={styles.modalContent}>
+    <div style={styles.modalOverlay} onClick={onClose}>
+      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div style={styles.title}>
-          <FontAwesomeIcon icon={faBuilding} color="#667eea" size="24px" />
-          Créer un nouveau projet
+          {isEditing ? '✏️ Modifier le projet' : '🚀 Nouveau projet'}
         </div>
-        <div style={styles.subtitle}>
-          Remplissez les informations de votre projet d'incubation
-        </div>
-
-        {error && <div style={styles.errorMsg}>{error}</div>}
-
+        
         <form onSubmit={handleSubmit}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>
-              <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '6px' }} />
-              Titre du projet *
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: Application mobile pour l'éducation"
-              value={formData.titre}
-              onChange={(e) => setFormData({...formData, titre: e.target.value})}
-              required
-              style={styles.input}
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Titre du projet"
+            value={titre}
+            onChange={(e) => setTitre(e.target.value)}
+            style={styles.input}
+            required
+          />
           
-          <div style={styles.formGroup}>
-            <label style={styles.label}>
-              <FontAwesomeIcon icon={faAlignLeft} style={{ marginRight: '6px' }} />
-              Description du projet
-            </label>
-            <textarea
-              placeholder="Décrivez brièvement votre projet, sa mission et ses objectifs..."
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              style={styles.textarea}
-              rows="4"
-            />
-          </div>
+          <textarea
+            placeholder="Description du projet"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            style={styles.textarea}
+            required
+          />
           
-          <div style={styles.formGroup}>
-            <label style={styles.label}>
-              <FontAwesomeIcon icon={faEuroSign} style={{ marginRight: '6px' }} />
-              Budget prévisionnel (€)
-            </label>
-            <input
-              type="number"
-              placeholder="Ex: 50000"
-              value={formData.budget}
-              onChange={(e) => setFormData({...formData, budget: e.target.value})}
-              style={styles.input}
-            />
-          </div>
-
+          <input
+            type="text"
+            placeholder="Secteur d'activité (ex: Tech, Santé, Éducation...)"
+            value={secteur}
+            onChange={(e) => setSecteur(e.target.value)}
+            style={styles.input}
+          />
+          
+          <input
+            type="number"
+            placeholder="Budget prévisionnel (€)"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            style={styles.input}
+          />
+          
           <div style={styles.buttonGroup}>
-            <button type="submit" disabled={loading} style={styles.submitBtn}>
-              {loading ? (
-                <><FontAwesomeIcon icon={faSpinner} spin /> Création...</>
-              ) : (
-                <><FontAwesomeIcon icon={faBuilding} /> Créer le projet</>
-              )}
+            <button type="submit" style={styles.btnSave} disabled={loading}>
+              {loading ? 'Chargement...' : (isEditing ? '💾 Enregistrer' : '✨ Créer')}
             </button>
-            <button type="button" onClick={onClose} style={styles.cancelBtn}>
-              <FontAwesomeIcon icon={faTimes} /> Annuler
+            <button type="button" onClick={onClose} style={styles.btnCancel}>
+              Annuler
             </button>
           </div>
+          
+          {isEditing && (
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <button type="button" onClick={handleDelete} style={styles.btnDelete}>
+                <FontAwesomeIcon icon={faTrash} /> Supprimer le projet
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
