@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import cron from 'node-cron';
 
 dotenv.config();
 
@@ -56,12 +55,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Serveur fonctionnel' });
 });
 
-// MongoDB
+// MongoDB - Vérifier que MONGODB_URI existe
+if (!process.env.MONGODB_URI) {
+  console.error('❌ Erreur: MONGODB_URI non définie dans les variables d\'environnement');
+  process.exit(1);
+}
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connecté'))
   .catch(err => console.error('❌ Erreur MongoDB:', err));
 
-const PORT = process.env.PORT || 5001;
+// PORT - Utiliser le port de Render ou 5001 par défaut
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
 });
