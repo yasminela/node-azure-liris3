@@ -38,6 +38,7 @@ import iaRoutes from './routes/ai.js';
 import soumissionRoutes from './routes/soumissions.js';
 import profilRoutes from './routes/profil.js';
 
+// Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/utilisateurs', utilisateurRoutes);
 app.use('/api/projets', projetRoutes);
@@ -55,20 +56,52 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Serveur fonctionnel' });
 });
 
-// MongoDB - Vérifier que MONGODB_URI existe
-if (!process.env.MONGODB_URI) {
-  console.error('❌ Erreur: MONGODB_URI non définie dans les variables d\'environnement');
+// Route de test
+app.get('/', (req, res) => {
+  res.json({ message: 'API Incubiny est en ligne' });
+});
+
+// MongoDB - Version corrigée avec gestion d'erreur détaillée
+const MONGODB_URI = process.env.MONGODB_URI;
+
+console.log('🔍 Vérification MONGODB_URI:', MONGODB_URI ? '✅ Définie' : '❌ NON DEFINIE');
+
+if (!MONGODB_URI) {
+  console.error('❌ ERREUR: MONGODB_URI non définie dans les variables d\'environnement');
+  console.error('💡 Solution: Ajoutez MONGODB_URI dans Render Dashboard → Environment');
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connecté'))
-  .catch(err => console.error('❌ Erreur MongoDB:', err));
+// Vérifier le format de la chaîne
+if (MONGODB_URI.includes('mongodb+srv')) {
+  console.log('✅ Format de connexion MongoDB Atlas détecté');
+} else {
+  console.log('⚠️ Format de connexion MongoDB non standard');
+}
 
-// PORT - Utiliser le port de Render ou 5001 par défaut
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+})
+.then(() => {
+  console.log('✅ MongoDB connecté avec succès');
+  console.log(`📊 Base de données: ${mongoose.connection.name}`);
+})
+.catch(err => {
+  console.error('❌ Erreur MongoDB détaillée:', err.message);
+  console.error('💡 Causes possibles:');
+  console.error('   1. Mauvais mot de passe dans la chaîne de connexion');
+  console.error('   2. IP non autorisée (ajoutez 0.0.0.0/0 dans IP Access List)');
+  console.error('   3. Nom du cluster incorrect');
+  console.error('   4. Problème de réseau / DNS');
+  process.exit(1);
+});
+
+// PORT
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`🌍 API accessible sur le port ${PORT}`);
 });
 
 // Créer les dossiers nécessaires
@@ -84,4 +117,13 @@ dirs.forEach(dir => {
     fs.mkdirSync(fullPath, { recursive: true });
     console.log(`📁 Dossier créé: ${fullPath}`);
   }
+});
+
+// Gestion des erreurs non capturées
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection:', reason);
 });
