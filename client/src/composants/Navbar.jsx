@@ -13,10 +13,7 @@ import {
   faTimes,
   faChevronDown,
   faChevronUp,
-  faBell,
-  faCheckCircle,
-  faExclamationTriangle,
-  faInfoCircle
+  faBell
 } from '@fortawesome/free-solid-svg-icons';
 
 function Navbar({ user, onLogout }) {
@@ -194,31 +191,23 @@ function Navbar({ user, onLogout }) {
     return null;
   };
 
-  const getNotificationIcon = (type) => {
-    switch(type) {
-      case 'succes': return '✅';
-      case 'warning': return '⚠️';
-      case 'erreur': return '❌';
-      case 'info': return 'ℹ️';
-      default: return '🔔';
-    }
-  };
-
   const formatDate = (date) => {
     const now = new Date();
     const notifDate = new Date(date);
-    const diffMs = now - notifDate;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+    const diffMins = Math.floor((now - notifDate) / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
     if (diffMins < 1) return 'À l\'instant';
     if (diffMins < 60) return `Il y a ${diffMins} min`;
     if (diffHours < 24) return `Il y a ${diffHours} h`;
     if (diffDays === 1) return 'Hier';
     if (diffDays < 7) return `Il y a ${diffDays} jours`;
-    return notifDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return notifDate.toLocaleDateString('fr-FR');
   };
+
+  const avatarUrl = getAvatarUrl();
+  const hasAvatar = !!avatarUrl;
 
   const styles = {
     nav: {
@@ -226,13 +215,12 @@ function Navbar({ user, onLogout }) {
         ? (darkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)')
         : (darkMode ? '#1e293b' : 'white'),
       backdropFilter: scrolled ? 'blur(10px)' : 'none',
-      padding: scrolled ? '10px 20px' : '14px 24px',
+      padding: scrolled ? '10px 24px' : '14px 24px',
       position: 'sticky',
       top: 0,
       zIndex: 1000,
       transition: 'all 0.3s ease',
-      borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
+      borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
     },
     navContainer: {
       maxWidth: '1400px',
@@ -247,20 +235,7 @@ function Navbar({ user, onLogout }) {
       gap: '10px',
       cursor: 'pointer'
     },
-    logo: {
-      height: '36px',
-      width: '36px',
-      objectFit: 'contain'
-    },
-    logoFallback: {
-      width: '36px',
-      height: '36px',
-      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-      borderRadius: '10px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
+    logo: { height: '36px', width: '36px', objectFit: 'contain' },
     logoText: {
       margin: 0,
       fontSize: '20px',
@@ -270,105 +245,90 @@ function Navbar({ user, onLogout }) {
     desktopMenu: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px'
+      gap: '16px'
     },
     themeBtn: {
       background: darkMode ? '#334155' : '#f1f5f9',
-      color: darkMode ? '#f1f5f9' : '#475569',
-      padding: '8px 12px',
-      borderRadius: '10px',
-      cursor: 'pointer',
       border: 'none',
+      borderRadius: '10px',
+      padding: '8px 12px',
+      cursor: 'pointer',
       fontSize: '16px',
       display: 'flex',
-      alignItems: 'center',
-      transition: 'all 0.3s ease'
+      alignItems: 'center'
     },
     notificationContainer: { position: 'relative' },
+    notificationBtn: {
+      position: 'relative',
+      background: darkMode ? '#334155' : '#f1f5f9',
+      border: 'none',
+      borderRadius: '10px',
+      padding: '8px 12px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    },
+    notificationBadge: {
+      position: 'absolute',
+      top: '-6px',
+      right: '-6px',
+      background: '#ef4444',
+      color: 'white',
+      borderRadius: '50%',
+      minWidth: '18px',
+      height: '18px',
+      fontSize: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: 'bold',
+      padding: '0 4px'
+    },
     notificationPanel: {
       position: 'absolute',
-      top: '50px',
+      top: '45px',
       right: '0',
-      width: '400px',
-      maxWidth: 'calc(100vw - 20px)',
+      width: '380px',
       background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '16px',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-      zIndex: 100,
+      borderRadius: '12px',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+      zIndex: 1100,
       overflow: 'hidden',
       border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
     },
     notificationHeader: {
-      padding: '16px 20px',
+      padding: '12px 16px',
       background: darkMode ? '#0f172a' : '#f8fafc',
       borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    notificationTitle: {
-      fontWeight: 'bold',
-      fontSize: '16px',
-      color: darkMode ? '#ffffff' : '#1e293b'
-    },
-    markAllRead: {
-      background: 'none',
-      border: 'none',
-      color: '#667eea',
-      cursor: 'pointer',
-      fontSize: '12px',
-      fontWeight: '500',
-      padding: '4px 8px',
-      borderRadius: '6px',
-      transition: 'all 0.2s'
+      alignItems: 'center',
+      fontWeight: 'bold'
     },
     notificationList: {
-      maxHeight: '450px',
+      maxHeight: '400px',
       overflowY: 'auto'
     },
     notificationItem: (estLue) => ({
-      padding: '14px 20px',
+      padding: '12px 16px',
       borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
       background: estLue ? 'transparent' : (darkMode ? 'rgba(147, 51, 234, 0.1)' : 'rgba(147, 51, 234, 0.05)'),
-      cursor: 'pointer',
-      transition: 'all 0.2s ease'
+      cursor: 'pointer'
     }),
-    notificationItemContent: {
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'flex-start'
-    },
-    notificationIcon: {
-      fontSize: '20px',
-      minWidth: '32px',
-      textAlign: 'center'
-    },
-    notificationText: {
-      flex: 1,
-      wordBreak: 'break-word'
-    },
-    notificationMessage: {
-      fontSize: '13px',
-      color: darkMode ? '#e2e8f0' : '#334155',
-      marginBottom: '6px',
-      lineHeight: '1.4'
-    },
-    notificationDate: {
-      fontSize: '10px',
-      color: darkMode ? '#64748b' : '#94a3b8',
-      marginTop: '4px'
-    },
     emptyNotifications: {
       textAlign: 'center',
-      padding: '40px 20px',
+      padding: '40px',
       color: darkMode ? '#94a3b8' : '#64748b'
     },
-    profileContainer: { position: 'relative' },
+    profileContainer: { 
+      position: 'relative'
+    },
     profileBtn: {
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      padding: '4px 12px',
+      padding: '6px 14px',
       borderRadius: '40px',
       background: darkMode ? '#334155' : '#f1f5f9',
       cursor: 'pointer',
@@ -395,38 +355,10 @@ function Navbar({ user, onLogout }) {
       fontSize: '14px'
     },
     userName: {
-      fontSize: '13px',
+      fontSize: '14px',
       fontWeight: '500',
       color: darkMode ? '#f1f5f9' : '#1e293b'
     },
-    profileMenu: {
-      position: 'absolute',
-      top: '50px',
-      right: '0',
-      width: '220px',
-      background: darkMode ? '#1e293b' : 'white',
-      borderRadius: '12px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-      zIndex: 100,
-      overflow: 'hidden',
-      border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
-    },
-    menuItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '12px 16px',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      color: darkMode ? '#f1f5f9' : '#1e293b',
-      fontSize: '14px'
-    },
-    menuDivider: {
-      height: '1px',
-      background: darkMode ? '#334155' : '#e2e8f0',
-      margin: '4px 0'
-    },
-    dangerItem: { color: '#ef4444' },
     mobileMenuBtn: {
       display: 'none',
       background: 'none',
@@ -472,18 +404,6 @@ function Navbar({ user, onLogout }) {
       fontWeight: '500',
       color: darkMode ? '#f1f5f9' : '#1e293b'
     },
-    mobileNotificationBadge: {
-      background: '#ef4444',
-      color: 'white',
-      borderRadius: '50%',
-      width: '20px',
-      height: '20px',
-      fontSize: '11px',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: '8px'
-    },
     closeBtn: {
       background: 'none',
       border: 'none',
@@ -493,160 +413,40 @@ function Navbar({ user, onLogout }) {
     }
   };
 
-  const avatarUrl = getAvatarUrl();
-  const hasAvatar = !!avatarUrl;
-  const [logoError, setLogoError] = useState(false);
-
   return (
     <>
       <nav style={styles.nav}>
         <div style={styles.navContainer}>
           <div style={styles.logoContainer} onClick={() => navigate('/')}>
-            {!logoError ? (
-              <img 
-                src="/logo-incubiny.png" 
-                alt="Incubiny" 
-                style={styles.logo}
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <div style={styles.logoFallback}>
-                <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>I</span>
-              </div>
-            )}
+            <img src="/logo-incubiny.png" alt="Incubiny" style={styles.logo} onError={(e) => e.target.style.display = 'none'} />
             <h2 style={styles.logoText}>Incubiny</h2>
           </div>
 
           <div style={styles.desktopMenu}>
-            <button className="btn-shine" onClick={toggleDarkMode} style={styles.themeBtn}>
+            <button onClick={toggleDarkMode} style={styles.themeBtn}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
             </button>
 
-            {/* NOTIFICATIONS AVEC COMPTEUR VISIBLE */}
-            <div style={styles.notificationContainer}>
-              <button 
-                className="btn-shine" 
-                style={{
-                  position: 'relative',
-                  background: unreadCount > 0 
-                    ? (darkMode ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.15)')
-                    : (darkMode ? '#334155' : '#f1f5f9'),
-                  border: unreadCount > 0 ? `2px solid #f59e0b` : 'none',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.3s ease'
-                }} 
-                onClick={() => setNotificationsMenuOpen(!notificationsMenuOpen)}
-              >
-                <FontAwesomeIcon 
-                  icon={faBell} 
-                  size="lg"
-                  style={{ 
-                    color: unreadCount > 0 ? '#f59e0b' : (darkMode ? '#94a3b8' : '#64748b'),
-                    transition: 'all 0.3s ease',
-                    animation: unreadCount > 0 ? 'bellShake 0.5s ease-in-out' : 'none'
-                  }} 
-                />
-                {unreadCount > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    background: '#ef4444',
-                    color: 'white',
-                    borderRadius: '50%',
-                    minWidth: '24px',
-                    height: '24px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    fontFamily: 'monospace',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 6px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px ' + (darkMode ? '#1e293b' : 'white'),
-                    zIndex: 10,
-                    letterSpacing: '0.5px'
-                  }}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
+            {/* NOTIFICATIONS */}
+            <div style={styles.notificationContainer} ref={notificationsMenuRef}>
+              <button style={styles.notificationBtn} onClick={() => setNotificationsMenuOpen(!notificationsMenuOpen)}>
+                <FontAwesomeIcon icon={faBell} />
+                {unreadCount > 0 && <span style={styles.notificationBadge}>{unreadCount}</span>}
               </button>
-
               {notificationsMenuOpen && (
                 <div style={styles.notificationPanel}>
                   <div style={styles.notificationHeader}>
-                    <span style={styles.notificationTitle}>
-                      <FontAwesomeIcon icon={faBell} style={{ marginRight: '8px', fontSize: '14px', color: unreadCount > 0 ? '#f59e0b' : '#667eea' }} />
-                      Notifications
-                      {unreadCount > 0 && (
-                        <span style={{ 
-                          marginLeft: '8px', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold',
-                          color: 'white',
-                          background: '#ef4444',
-                          padding: '2px 10px',
-                          borderRadius: '20px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                        }}>
-                          {unreadCount}
-                        </span>
-                      )}
-                    </span>
-                    {unreadCount > 0 && (
-                      <button 
-                        style={styles.markAllRead} 
-                        onClick={marquerToutCommeLu}
-                        onMouseEnter={(e) => e.currentTarget.style.background = darkMode ? '#334155' : '#e2e8f0'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                      >
-                        Tout marquer comme lu
-                      </button>
-                    )}
+                    <span>🔔 Notifications</span>
+                    {unreadCount > 0 && <button onClick={marquerToutCommeLu} style={{ color: '#667eea', background: 'none', border: 'none', cursor: 'pointer' }}>Tout marquer comme lu</button>}
                   </div>
                   <div style={styles.notificationList}>
                     {notifications.length === 0 ? (
-                      <div style={styles.emptyNotifications}>
-                        <FontAwesomeIcon icon={faBell} size="2x" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                        <p>Aucune notification</p>
-                        <p style={{ fontSize: '11px', marginTop: '8px' }}>Vous serez notifié des mises à jour importantes</p>
-                      </div>
+                      <div style={styles.emptyNotifications}>Aucune notification</div>
                     ) : (
-                      notifications.map((notif) => (
-                        <div 
-                          key={notif._id} 
-                          style={styles.notificationItem(notif.estLue)}
-                          onClick={() => marquerCommeLue(notif._id)}
-                        >
-                          <div style={styles.notificationItemContent}>
-                            <div style={styles.notificationIcon}>
-                              {getNotificationIcon(notif.type)}
-                            </div>
-                            <div style={styles.notificationText}>
-                              <div style={styles.notificationMessage}>
-                                {notif.message}
-                              </div>
-                              <div style={styles.notificationDate}>
-                                {formatDate(notif.createdAt)}
-                              </div>
-                            </div>
-                            {!notif.estLue && (
-                              <div style={{
-                                width: '10px',
-                                height: '10px',
-                                background: '#ef4444',
-                                borderRadius: '50%',
-                                marginTop: '8px',
-                                flexShrink: 0,
-                                boxShadow: '0 0 0 2px ' + (darkMode ? '#1e293b' : 'white')
-                              }} />
-                            )}
-                          </div>
+                      notifications.map(notif => (
+                        <div key={notif._id} style={styles.notificationItem(notif.estLue)} onClick={() => marquerCommeLue(notif._id)}>
+                          <div>{notif.message}</div>
+                          <div style={{ fontSize: '11px', color: darkMode ? '#64748b' : '#94a3b8', marginTop: '4px' }}>{formatDate(notif.createdAt)}</div>
                         </div>
                       ))
                     )}
@@ -655,8 +455,15 @@ function Navbar({ user, onLogout }) {
               )}
             </div>
 
+            {/* PROFIL MENU - SOLUTION FINALE CORRECTE */}
             <div style={styles.profileContainer} ref={profileMenuRef}>
-              <button className="btn-shine" style={styles.profileBtn} onClick={() => setProfileMenuOpen(!profileMenuOpen)}>
+              <button 
+                onClick={() => {
+                  console.log('🔘 Bouton profil cliqué');
+                  setProfileMenuOpen(!profileMenuOpen);
+                }}
+                style={styles.profileBtn}
+              >
                 {hasAvatar ? (
                   <img src={avatarUrl} alt="Avatar" style={styles.avatar} />
                 ) : (
@@ -667,43 +474,100 @@ function Navbar({ user, onLogout }) {
               </button>
 
               {profileMenuOpen && (
-                <div style={styles.profileMenu}>
-                  <div className="btn-shine" style={styles.menuItem} onClick={handleChangePhoto}>
-                    <FontAwesomeIcon icon={faCamera} />
-                    Changer la photo
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '0',
+                  marginTop: '8px',
+                  width: '220px',
+                  backgroundColor: darkMode ? '#1e293b' : 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  zIndex: 99999,
+                  overflow: 'hidden',
+                  border: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`
+                }}>
+                  <div 
+                    onClick={() => {
+                      handleChangePhoto();
+                      setProfileMenuOpen(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      color: darkMode ? '#f1f5f9' : '#1e293b',
+                      fontSize: '14px'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#334155' : '#f1f5f9'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <FontAwesomeIcon icon={faCamera} style={{ width: '16px' }} />
+                    <span>Changer la photo</span>
                   </div>
                   
                   {hasAvatar && (
-                    <div className="btn-shine" style={styles.menuItem} onClick={handleDeletePhoto}>
-                      <FontAwesomeIcon icon={faTrashAlt} />
-                      Supprimer la photo
+                    <div 
+                      onClick={() => {
+                        handleDeletePhoto();
+                        setProfileMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        color: darkMode ? '#f1f5f9' : '#1e293b',
+                        fontSize: '14px'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#334155' : '#f1f5f9'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <FontAwesomeIcon icon={faTrashAlt} style={{ width: '16px' }} />
+                      <span>Supprimer la photo</span>
                     </div>
                   )}
                   
-                  <div style={styles.menuDivider} />
+                  <div style={{ height: '1px', backgroundColor: darkMode ? '#334155' : '#e2e8f0', margin: '0' }} />
                   
-                  <div className="btn-shine" style={{ ...styles.menuItem, ...styles.dangerItem }} onClick={handleLogout}>
-                    <FontAwesomeIcon icon={faSignOutAlt} />
-                    Déconnexion
+                  <div 
+                    onClick={() => {
+                      handleLogout();
+                      setProfileMenuOpen(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      color: '#ef4444',
+                      fontSize: '14px'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = darkMode ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} style={{ width: '16px' }} />
+                    <span>Déconnexion</span>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <button className="btn-shine" onClick={() => setMobileMenuOpen(true)} style={styles.mobileMenuBtn}>
+          <button onClick={() => setMobileMenuOpen(true)} style={styles.mobileMenuBtn}>
             <FontAwesomeIcon icon={faBars} />
           </button>
         </div>
       </nav>
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-        accept="image/*"
-        onChange={handleFileChange}
-      />
+      <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleFileChange} />
 
       {mobileMenuOpen && (
         <>
@@ -711,84 +575,27 @@ function Navbar({ user, onLogout }) {
           <div style={styles.mobileMenu}>
             <div style={styles.mobileMenuHeader}>
               <img src="/logo-incubiny.png" alt="Logo" style={{ height: '32px' }} />
-              <button onClick={() => setMobileMenuOpen(false)} style={styles.closeBtn}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
+              <button onClick={() => setMobileMenuOpen(false)} style={styles.closeBtn}><FontAwesomeIcon icon={faTimes} /></button>
             </div>
-            
             <div style={{ ...styles.mobileMenuItem, display: 'flex', alignItems: 'center', gap: '12px', background: darkMode ? '#334155' : '#f1f5f9' }}>
-              {hasAvatar ? (
-                <img src={avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-              ) : (
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>{getInitials()}</div>
-              )}
-              <div>
-                <div style={{ fontWeight: 'bold' }}>{currentUser?.firstName} {currentUser?.lastName}</div>
-                <div style={{ fontSize: '11px', opacity: 0.7 }}>{currentUser?.email}</div>
-              </div>
+              {hasAvatar ? <img src={avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} /> : <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{getInitials()}</div>}
+              <div><div style={{ fontWeight: 'bold' }}>{currentUser?.firstName} {currentUser?.lastName}</div><div style={{ fontSize: '11px', opacity: 0.7 }}>{currentUser?.email}</div></div>
             </div>
-            
-            <div className="btn-shine" style={styles.mobileMenuItem} onClick={() => {
-              setMobileMenuOpen(false);
-              setNotificationsMenuOpen(true);
-            }}>
-              <FontAwesomeIcon icon={faBell} /> Notifications
-              {unreadCount > 0 && <span style={styles.mobileNotificationBadge}>{unreadCount}</span>}
-            </div>
-            
-            <div className="btn-shine" style={styles.mobileMenuItem} onClick={handleChangePhoto}>
-              <FontAwesomeIcon icon={faCamera} /> Changer la photo
-            </div>
-            {hasAvatar && (
-              <div className="btn-shine" style={styles.mobileMenuItem} onClick={handleDeletePhoto}>
-                <FontAwesomeIcon icon={faTrashAlt} /> Supprimer la photo
-              </div>
-            )}
-            <div className="btn-shine" style={styles.mobileMenuItem} onClick={toggleDarkMode}>
-              <FontAwesomeIcon icon={darkMode ? faSun : faMoon} /> {darkMode ? 'Mode clair' : 'Mode sombre'}
-            </div>
-            <div className="btn-shine" style={{ ...styles.mobileMenuItem, marginTop: 'auto', color: '#ef4444' }} onClick={handleLogout}>
-              <FontAwesomeIcon icon={faSignOutAlt} /> Déconnexion
-            </div>
+            <div style={styles.mobileMenuItem} onClick={handleChangePhoto}><FontAwesomeIcon icon={faCamera} /> Changer la photo</div>
+            {hasAvatar && <div style={styles.mobileMenuItem} onClick={handleDeletePhoto}><FontAwesomeIcon icon={faTrashAlt} /> Supprimer la photo</div>}
+            <div style={styles.mobileMenuItem} onClick={toggleDarkMode}><FontAwesomeIcon icon={darkMode ? faSun : faMoon} /> {darkMode ? 'Mode clair' : 'Mode sombre'}</div>
+            <div style={{ ...styles.mobileMenuItem, marginTop: 'auto', color: '#ef4444' }} onClick={handleLogout}><FontAwesomeIcon icon={faSignOutAlt} /> Déconnexion</div>
           </div>
         </>
       )}
 
       <style dangerouslySetInnerHTML={{
         __html: `
-          .btn-shine {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-          }
-          .btn-shine::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
-          }
-          .btn-shine:hover::before {
-            left: 100%;
-          }
-          .btn-shine:hover {
-            transform: translateY(-2px);
-          }
-          @keyframes bellShake {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(15deg); }
-            50% { transform: rotate(-15deg); }
-            75% { transform: rotate(5deg); }
-            100% { transform: rotate(0deg); }
-          }
-          @media (max-width: 768px) {
-            .desktop-menu {
-              display: none !important;
-            }
-          }
+          .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
+          .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s ease; }
+          .btn-shine:hover::before { left: 100%; }
+          .btn-shine:hover { transform: translateY(-2px); }
+          @media (max-width: 768px) { .desktop-menu { display: none !important; } }
         `
       }} />
     </>

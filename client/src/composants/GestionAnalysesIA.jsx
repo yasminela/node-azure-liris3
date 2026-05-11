@@ -431,7 +431,7 @@ function GestionAnalysesIA() {
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalTitle}>
               <FontAwesomeIcon icon={faRobot} color="#667eea" />
-              🤖 Résultat de l'analyse
+               Résultat de l'analyse
             </div>
 
             <div style={{ ...styles.scoreContainer, background: getScoreColor(analyseResult.scoreImpact) + '15' }}>

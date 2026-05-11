@@ -11,6 +11,7 @@ function NotificationPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
+  const [markingId, setMarkingId] = useState(null);
   const popupRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ function NotificationPopup() {
   };
 
   const marquerCommeLue = async (id) => {
+    setMarkingId(id);
     try {
       await api.put(`/notifications/${id}/lire`);
       setNotifications(prev => prev.map(n => 
@@ -51,6 +53,8 @@ function NotificationPopup() {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Erreur:', error);
+    } finally {
+      setMarkingId(null);
     }
   };
 
@@ -94,9 +98,7 @@ function NotificationPopup() {
   };
 
   const styles = {
-    container: {
-      position: 'relative'
-    },
+    container: { position: 'relative' },
     bellButton: {
       position: 'relative',
       background: darkMode ? '#334155' : '#f1f5f9',
@@ -124,8 +126,7 @@ function NotificationPopup() {
       alignItems: 'center',
       justifyContent: 'center',
       fontWeight: 'bold',
-      padding: '0 4px',
-      boxShadow: `0 0 0 2px ${darkMode ? '#1e293b' : 'white'}`
+      padding: '0 4px'
     },
     popup: {
       position: 'absolute',
@@ -170,14 +171,7 @@ function NotificationPopup() {
       alignItems: 'center',
       gap: '6px'
     },
-    markAllDisabled: {
-      opacity: 0.5,
-      cursor: 'not-allowed'
-    },
-    list: {
-      maxHeight: '400px',
-      overflowY: 'auto'
-    },
+    list: { maxHeight: '400px', overflowY: 'auto' },
     notificationItem: (estLue) => ({
       padding: '14px 16px',
       borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
@@ -188,13 +182,8 @@ function NotificationPopup() {
       gap: '12px',
       alignItems: 'flex-start'
     }),
-    notificationIcon: {
-      fontSize: '18px',
-      minWidth: '28px'
-    },
-    notificationContent: {
-      flex: 1
-    },
+    notificationIcon: { fontSize: '18px', minWidth: '28px' },
+    notificationContent: { flex: 1 },
     notificationMessage: {
       fontSize: '13px',
       color: darkMode ? '#e2e8f0' : '#334155',
@@ -221,25 +210,14 @@ function NotificationPopup() {
       textAlign: 'center',
       padding: '40px 20px',
       color: darkMode ? '#94a3b8' : '#64748b'
-    },
-    loadingState: {
-      textAlign: 'center',
-      padding: '40px',
-      color: darkMode ? '#94a3b8' : '#64748b'
     }
   };
 
   return (
     <div style={styles.container} ref={popupRef}>
-      <button 
-        className="btn-shine" 
-        style={styles.bellButton} 
-        onClick={() => setIsOpen(!isOpen)}
-      >
+      <button className="btn-shine" style={styles.bellButton} onClick={() => setIsOpen(!isOpen)}>
         <FontAwesomeIcon icon={faBell} />
-        {unreadCount > 0 && (
-          <span style={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-        )}
+        {unreadCount > 0 && <span style={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button>
 
       {isOpen && (
@@ -249,65 +227,37 @@ function NotificationPopup() {
               <FontAwesomeIcon icon={faBell} />
               Notifications
               {unreadCount > 0 && (
-                <span style={{ fontSize: '11px', color: '#f59e0b', marginLeft: '4px' }}>
-                  ({unreadCount} non lue{unreadCount > 1 ? 's' : ''})
-                </span>
+                <span style={{ fontSize: '11px', color: '#f59e0b' }}>({unreadCount} non lue{unreadCount > 1 ? 's' : ''})</span>
               )}
             </div>
             {unreadCount > 0 && (
               <button 
                 onClick={marquerToutCommeLu}
                 disabled={markingAll}
-                style={{
-                  ...styles.markAllButton,
-                  ...(markingAll ? styles.markAllDisabled : {})
-                }}
-                onMouseEnter={(e) => {
-                  if (!markingAll) e.currentTarget.style.background = darkMode ? '#334155' : '#e2e8f0';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'none';
-                }}
+                style={{ ...styles.markAllButton, opacity: markingAll ? 0.5 : 1 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = darkMode ? '#334155' : '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
               >
-                {markingAll ? (
-                  <><FontAwesomeIcon icon={faSpinner} spin /> Chargement...</>
-                ) : (
-                  <><FontAwesomeIcon icon={faCheckDouble} /> Tout marquer comme lu</>
-                )}
+                {markingAll ? <><FontAwesomeIcon icon={faSpinner} spin /> Chargement...</> : <><FontAwesomeIcon icon={faCheckDouble} /> Tout marquer comme lu</>}
               </button>
             )}
           </div>
 
           <div style={styles.list}>
             {loading ? (
-              <div style={styles.loadingState}>
-                <FontAwesomeIcon icon={faSpinner} spin size="2x" />
-                <p style={{ marginTop: '12px' }}>Chargement...</p>
-              </div>
+              <div style={styles.emptyState}><FontAwesomeIcon icon={faSpinner} spin size="2x" /><p>Chargement...</p></div>
             ) : notifications.length === 0 ? (
-              <div style={styles.emptyState}>
-                <FontAwesomeIcon icon={faBell} size="2x" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <p>Aucune notification</p>
-                <p style={{ fontSize: '11px', marginTop: '8px' }}>Vous serez notifié des mises à jour importantes</p>
-              </div>
+              <div style={styles.emptyState}><FontAwesomeIcon icon={faBell} size="2x" style={{ opacity: 0.3 }} /><p>Aucune notification</p></div>
             ) : (
               notifications.map(notif => (
-                <div 
-                  key={notif._id} 
-                  style={styles.notificationItem(notif.estLue)}
-                  onClick={() => !notif.estLue && marquerCommeLue(notif._id)}
-                >
-                  <div style={styles.notificationIcon}>
-                    {getNotificationIcon(notif.type, notif.message)}
-                  </div>
+                <div key={notif._id} style={styles.notificationItem(notif.estLue)} onClick={() => !notif.estLue && marquerCommeLue(notif._id)}>
+                  <div style={styles.notificationIcon}>{getNotificationIcon(notif.type, notif.message)}</div>
                   <div style={styles.notificationContent}>
                     <div style={styles.notificationMessage}>{notif.message}</div>
-                    <div style={styles.notificationDate}>
-                      <FontAwesomeIcon icon={faBell} size="xs" style={{ opacity: 0.5 }} />
-                      {formatDate(notif.createdAt)}
-                    </div>
+                    <div style={styles.notificationDate}><FontAwesomeIcon icon={faBell} size="xs" /> {formatDate(notif.createdAt)}</div>
                   </div>
                   {!notif.estLue && <div style={styles.unreadDot} />}
+                  {markingId === notif._id && <FontAwesomeIcon icon={faSpinner} spin size="sm" />}
                 </div>
               ))
             )}

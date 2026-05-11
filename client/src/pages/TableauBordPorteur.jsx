@@ -34,6 +34,7 @@ function TableauBordPorteur({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [soumissions, setSoumissions] = useState([]);
   const [toast, setToast] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const colors = {
     primary: '#9333ea',
@@ -44,9 +45,23 @@ function TableauBordPorteur({ user, onLogout }) {
   };
 
   useEffect(() => {
-    loadData();
-    loadUserProfile();
-    loadSoumissions();
+    const initializeDashboard = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          loadUserProfile(),
+          loadData(),
+          loadSoumissions()
+        ]);
+      } catch (error) {
+        console.error('Erreur initialisation:', error);
+        showToastMessage('error', 'Erreur lors du chargement des données');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeDashboard();
   }, []);
 
   const showToastMessage = (type, message) => {
@@ -60,28 +75,21 @@ function TableauBordPorteur({ user, onLogout }) {
       setCurrentUser(res.data);
       localStorage.setItem('user', JSON.stringify(res.data));
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur chargement profil:', error);
     }
   };
 
-  const handleAvatarUpdate = (newAvatar) => {
-    setCurrentUser(prev => ({ ...prev, avatar: newAvatar }));
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    storedUser.avatar = newAvatar;
-    localStorage.setItem('user', JSON.stringify(storedUser));
-    showToastMessage('success', 'Photo de profil mise à jour !');
-  };
-
   const loadData = async () => {
-    setLoading(true);
     try {
       const [projetsRes, tachesRes, etapesRes] = await Promise.all([
         api.get('/projets/mes-projets'),
         api.get('/taches/mes-taches'),
         api.get('/etapes/mes-etapes')
       ]);
+      
       setProjets(projetsRes.data || []);
       setTaches(tachesRes.data || []);
+      setEtapes(etapesRes.data || []);
 
       const etapesData = etapesRes.data || [];
       const etapesValidees = etapesData.filter(e => e.statut === 'validee').length;
@@ -96,10 +104,8 @@ function TableauBordPorteur({ user, onLogout }) {
         progression: progression
       });
     } catch (error) {
-      console.error('Erreur chargement:', error);
-      showToastMessage('error', 'Erreur lors du chargement des données');
-    } finally {
-      setLoading(false);
+      console.error('Erreur chargement data:', error);
+      throw error;
     }
   };
 
@@ -112,13 +118,21 @@ function TableauBordPorteur({ user, onLogout }) {
     }
   };
 
+  const handleAvatarUpdate = (newAvatar) => {
+    setCurrentUser(prev => ({ ...prev, avatar: newAvatar }));
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    storedUser.avatar = newAvatar;
+    localStorage.setItem('user', JSON.stringify(storedUser));
+    showToastMessage('success', 'Photo de profil mise à jour !');
+  };
+
   const handleDeleteProjet = async (projetId) => {
-    if (!confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')) return;
+    if (!confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce projet ?')) return;
     
     try {
       await api.delete(`/projets/${projetId}`);
-      showToastMessage('success', '✅ Projet supprimé avec succès');
-      loadData();
+      showToastMessage('success', '✅ Projet supprimé');
+      await Promise.all([loadData(), loadSoumissions()]);
     } catch (error) {
       console.error('Erreur suppression:', error);
       showToastMessage('error', '❌ Erreur lors de la suppression');
@@ -336,7 +350,7 @@ function TableauBordPorteur({ user, onLogout }) {
       alignItems: 'center', 
       gap: '8px',
       borderLeft: `4px solid ${colors.primary}`,
-      paddingLeft: '16px'
+      paddingLeft: '16px' 
     },
     projetCard: {
       background: darkMode ? '#0f172a' : '#f8fafc',
@@ -466,7 +480,6 @@ function TableauBordPorteur({ user, onLogout }) {
       <Navbar user={currentUser} onLogout={onLogout} />
       
       <div style={styles.container}>
-        {/* Header avec avatar - SANS le bouton Nouveau projet */}
         <div style={styles.headerCard}>
           <div style={styles.userInfo}>
             <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} size="large" />
@@ -482,10 +495,8 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
             </div>
           </div>
-          {/* Bouton Nouveau projet supprimé - il est maintenant dans la section Mes projets */}
         </div>
 
-        {/* Onglets */}
         <div style={styles.tabsContainer}>
           <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faChartLine} /> Tableau de bord
@@ -521,32 +532,31 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
               <div className="stat-card" style={styles.statCard}>
                 <div style={styles.statValue}>{soumissions.filter(s => s.statut === 'soumise').length}</div>
-                <div style={styles.statLabel}>Soumissions en attente</div>
+                <div style={styles.statLabel}>En attente de validation</div>
               </div>
             </div>
 
             <div style={styles.progressionCard}>
               <div style={styles.progressionTitle}>
                 <FontAwesomeIcon icon={faAward} color={colors.primary} />
-                Progression du programme Early Stage
+                Progression du programme
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: darkMode ? '#cbd5e1' : '#64748b' }}>6 mois d'accompagnement intensif</span>
+                <span style={{ fontSize: '13px', color: darkMode ? '#cbd5e1' : '#64748b' }}>6 mois d'accompagnement</span>
                 <span style={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : '#1e293b' }}>{stats.progression}%</span>
               </div>
               <div style={styles.progressionBar}>
                 <div style={styles.progressionFill} />
               </div>
               <div style={styles.progressionText}>
-                {stats.progression === 0 ? '🚀 Commencez votre parcours en soumettant votre premier document !' : 
-                 stats.progression === 100 ? '🎉 Félicitations ! Vous avez terminé toutes les étapes !' : 
-                 `📈 Excellente progression ! Continuez, vous êtes à ${stats.progression}% du programme.`}
+                {stats.progression === 0 ? '🚀 Commencez votre parcours !' : 
+                 stats.progression === 100 ? '🎉 Félicitations ! Programme terminé !' : 
+                 `📈 Continuez, vous êtes à ${stats.progression}%`}
               </div>
             </div>
 
             <Calendrier />
 
-            {/* Section Mes projets avec bouton de création */}
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>
                 <FontAwesomeIcon icon={faBuilding} color={colors.primary} /> 
@@ -554,8 +564,8 @@ function TableauBordPorteur({ user, onLogout }) {
               </div>
               {projets.length === 0 ? (
                 <div style={styles.emptyState}>
-                  <p>📭 Aucun projet pour le moment</p>
-                  <button className="btn-shine" onClick={() => { setSelectedProjet(null); setShowCreerProjet(true); }} style={{ ...styles.btnEdit, marginTop: '16px' }}>
+                  <p>📭 Aucun projet</p>
+                  <button className="btn-shine" onClick={() => setShowCreerProjet(true)} style={{ ...styles.btnEdit, marginTop: '16px' }}>
                     <FontAwesomeIcon icon={faPlus} /> Créer mon premier projet
                   </button>
                 </div>
@@ -566,7 +576,7 @@ function TableauBordPorteur({ user, onLogout }) {
                       <div style={styles.projetTitre}>{p.titre || p.nomProjet}</div>
                       <div style={styles.projetDescription}>{p.description || '—'}</div>
                       <div style={styles.projetMeta}>
-                        <span>📂 {p.secteur || 'Secteur non spécifié'}</span>
+                        <span>📂 {p.secteur || 'Non spécifié'}</span>
                         {p.budget && <span>💰 {p.budget.toLocaleString()} €</span>}
                         <span>{getStatutBadge(p.statut)}</span>
                       </div>
@@ -582,39 +592,6 @@ function TableauBordPorteur({ user, onLogout }) {
                           </button>
                         </>
                       )}
-                      {p.statut !== 'en_attente' && (
-                        <span style={{ fontSize: '12px', color: darkMode ? '#64748b' : '#94a3b8' }}>
-                          {p.statut === 'valide' ? '✅ Projet validé' : '❌ Projet non retenu'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div style={styles.infoCard}>
-              <div style={styles.sectionTitle}>
-                <FontAwesomeIcon icon={faTasks} color={colors.primary} /> 
-                Tâches externes
-              </div>
-              {taches.length === 0 ? (
-                <div style={styles.emptyState}>📭 Aucune tâche pour le moment</div>
-              ) : (
-                taches.map(t => (
-                  <div key={t._id} style={{ ...styles.projetCard, justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={styles.projetTitre}>{t.titre}</div>
-                      <div style={styles.projetDescription}>{t.description || '—'}</div>
-                      <div style={styles.projetMeta}>
-                        {t.dateLimite && <span>📅 {new Date(t.dateLimite).toLocaleDateString()}</span>}
-                      </div>
-                    </div>
-                    <div>
-                      {t.estComplete ? 
-                        <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>✅ Complétée</span> :
-                        <span style={{ background: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' }}>⏳ En cours</span>
-                      }
                     </div>
                   </div>
                 ))
@@ -641,7 +618,7 @@ function TableauBordPorteur({ user, onLogout }) {
         )}
 
         {activeTab === 'soumissions' && (
-          <ValidationDocument onValidate={() => { loadSoumissions(); loadData(); }} />
+          <ValidationDocument onValidate={() => loadSoumissions()} />
         )}
 
         {activeTab === 'analyses' && <GestionAnalysesIA />}
@@ -652,7 +629,7 @@ function TableauBordPorteur({ user, onLogout }) {
       {showCreerProjet && (
         <CreerProjet 
           onClose={() => setShowCreerProjet(false)} 
-          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet créé avec succès !'); }} 
+          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet créé !'); }} 
         />
       )}
 
@@ -660,11 +637,12 @@ function TableauBordPorteur({ user, onLogout }) {
         <CreerProjet 
           projetExistant={selectedProjet}
           onClose={() => { setShowEditProjet(false); setSelectedProjet(null); }} 
-          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet modifié avec succès !'); }} 
+          onSuccess={() => { loadData(); showToastMessage('success', '✅ Projet modifié !'); }} 
         />
       )}
 
       {toast && <ToastNotification type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      
     </div>
   );
 }

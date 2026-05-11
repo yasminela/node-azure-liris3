@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faFileAlt, faSpinner, faDownload, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faFileAlt, faSpinner, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function ValidationDocument({ onValidate }) {
   const { darkMode } = useTheme();
@@ -21,6 +21,7 @@ function ValidationDocument({ onValidate }) {
     setLoading(true);
     try {
       const res = await api.get('/etapes/soumissions');
+      console.log('📋 Soumissions chargées:', res.data);
       setSoumissions(res.data || []);
     } catch (error) {
       console.error('Erreur chargement:', error);
@@ -134,10 +135,9 @@ function ValidationDocument({ onValidate }) {
       fontSize: '14px',
       fontFamily: 'inherit',
       resize: 'vertical',
-      minHeight: '80px',
-      maxHeight: '150px'
+      minHeight: '80px'
     },
-    buttonGroup: { display: 'flex', gap: '12px' },
+    buttonGroup: { display: 'flex', gap: '12px', marginTop: '12px' },
     btnValid: {
       background: '#10b981',
       color: 'white',
@@ -182,8 +182,8 @@ function ValidationDocument({ onValidate }) {
       background: darkMode ? '#1e293b' : 'white',
       borderRadius: '20px',
       padding: '24px',
-      maxWidth: '90%',
-      width: '800px',
+      maxWidth: '800px',
+      width: '90%',
       maxHeight: '80vh',
       overflow: 'auto'
     },
@@ -226,7 +226,7 @@ function ValidationDocument({ onValidate }) {
     <div style={styles.container}>
       <div style={styles.title}>
         <FontAwesomeIcon icon={faFileAlt} color="#667eea" />
-        Documents à valider
+        Documents à valider ({soumissions.length})
       </div>
 
       {soumissions.length === 0 ? (
@@ -245,7 +245,6 @@ function ValidationDocument({ onValidate }) {
               Soumis le: {new Date(s.dateSoumission).toLocaleDateString('fr-FR')}
             </div>
             
-            {/* Lien pour consulter le document */}
             {s.documentUrl && (
               <div 
                 style={styles.documentLink} 
@@ -253,7 +252,6 @@ function ValidationDocument({ onValidate }) {
               >
                 <FontAwesomeIcon icon={faEye} />
                 Consulter le document soumis
-                <FontAwesomeIcon icon={faDownload} style={{ marginLeft: '8px' }} />
               </div>
             )}
 
@@ -264,8 +262,7 @@ function ValidationDocument({ onValidate }) {
                 background: darkMode ? '#0f172a' : '#f8fafc', 
                 borderRadius: '10px', 
                 fontSize: '13px',
-                wordWrap: 'break-word',
-                whiteSpace: 'pre-wrap'
+                wordWrap: 'break-word'
               }}>
                 <strong>💬 Commentaire du porteur:</strong> {s.commentairePorteur}
               </div>

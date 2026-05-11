@@ -13,7 +13,6 @@ import EarlyStageTimeline from '../composants/EarlyStageTimeline';
 import ScoresPorteurs from '../composants/ScoresPorteurs';
 import AdminAnalysesIA from '../composants/AdminAnalysesIA';
 import AvatarManager from '../composants/AvatarManager';
-import GlassCard from '../composants/ui/GlassCard';
 import ToastNotification from '../composants/ui/ToastNotification';
 import PiedDePage from '../composants/PiedDePage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,7 +20,7 @@ import {
   faChartLine, faUsers, faBuilding, faFileAlt, faEye, 
   faUserPlus, faPaperPlane, faTasks, faUserCircle, 
   faExclamationTriangle, faEdit, faTrash, faCheck, faTimes,
-  faTachometerAlt, faSpinner, faComments, faClock
+  faTachometerAlt, faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 
 function TableauBordAdmin({ user, onLogout }) {
@@ -40,7 +39,7 @@ function TableauBordAdmin({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(user);
   const [toast, setToast] = useState(null);
-  const [feedbackText, setFeedbackText] = useState({});
+  const [showGuide, setShowGuide] = useState(false);
 
   const colors = {
     primary: '#9333ea',
@@ -51,8 +50,22 @@ function TableauBordAdmin({ user, onLogout }) {
   };
 
   useEffect(() => {
-    loadAllData();
-    loadUserProfile();
+    const initializeAdminDashboard = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          loadUserProfile(),
+          loadAllData()
+        ]);
+      } catch (error) {
+        console.error('Erreur initialisation:', error);
+        showToastMessage('error', 'Erreur lors du chargement');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeAdminDashboard();
   }, []);
 
   const showToastMessage = (type, message) => {
@@ -70,22 +83,14 @@ function TableauBordAdmin({ user, onLogout }) {
     }
   };
 
-  const handleAvatarUpdate = (newAvatar) => {
-    setCurrentUser(prev => ({ ...prev, avatar: newAvatar }));
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    storedUser.avatar = newAvatar;
-    localStorage.setItem('user', JSON.stringify(storedUser));
-    showToastMessage('success', 'Photo de profil mise à jour !');
-  };
-
   const loadAllData = async () => {
-    setLoading(true);
     try {
       const [projetsRes, utilisateursRes, soumissionsRes] = await Promise.all([
         api.get('/projets/tous'),
         api.get('/utilisateurs'),
         api.get('/etapes/soumissions')
       ]);
+      
       setStats({
         projets: projetsRes.data?.filter(p => p.statut === 'en_attente').length || 0,
         porteurs: utilisateursRes.data?.filter(u => u.role === 'porteur').length || 0,
@@ -94,58 +99,46 @@ function TableauBordAdmin({ user, onLogout }) {
       setPorteurs(utilisateursRes.data?.filter(u => u.role === 'porteur') || []);
       setProjets(projetsRes.data || []);
     } catch (error) {
-      console.error('Erreur chargement:', error);
-      showToastMessage('error', 'Erreur de chargement des données');
-    } finally {
-      setLoading(false);
+      console.error('Erreur chargement data:', error);
+      throw error;
     }
+  };
+
+  const handleAvatarUpdate = (newAvatar) => {
+    setCurrentUser(prev => ({ ...prev, avatar: newAvatar }));
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    storedUser.avatar = newAvatar;
+    localStorage.setItem('user', JSON.stringify(storedUser));
+    showToastMessage('success', 'Photo de profil mise à jour !');
   };
 
   const handleDeletePorteur = async (id) => {
-    if (window.confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce porteur ?')) {
-      try {
-        await api.delete(`/utilisateurs/${id}`);
-        await loadAllData();
-        showToastMessage('success', '✅ Porteur supprimé avec succès');
-      } catch (error) {
-        showToastMessage('error', '❌ Erreur lors de la suppression');
-      }
+    if (!window.confirm('⚠️ Supprimer ce porteur ?')) return;
+    
+    try {
+      await api.delete(`/utilisateurs/${id}`);
+      await loadAllData();
+      showToastMessage('success', '✅ Porteur supprimé');
+    } catch (error) {
+      showToastMessage('error', '❌ Erreur suppression');
     }
-  };
-
-  const handleOpenValidationProjet = (projet) => {
-    setSelectedProjet(projet);
-    setShowValidationProjet(true);
   };
 
   const getStatutBadge = (statut) => {
     const badges = {
-      en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faClock },
+      en_attente: { background: '#fef3c7', color: '#d97706', text: '⏳ En attente', icon: faExclamationTriangle },
       valide: { background: '#d1fae5', color: '#059669', text: '✅ Validé', icon: faCheck },
-      validee: { background: '#d1fae5', color: '#059669', text: '✅ Validé', icon: faCheck },
-      rejete: { background: '#fee2e2', color: '#dc2626', text: '❌ Rejeté', icon: faTimes },
-      refusee: { background: '#fee2e2', color: '#dc2626', text: '❌ Refusé', icon: faTimes },
-      soumise: { background: '#dbeafe', color: '#2563eb', text: '📤 En attente', icon: faFileAlt }
+      rejete: { background: '#fee2e2', color: '#dc2626', text: '❌ Rejeté', icon: faTimes }
     };
-    const b = badges[statut] || { background: '#f3f4f6', color: '#374151', text: statut, icon: faTasks };
+    const b = badges[statut] || badges.en_attente;
     return (
-      <span style={{ 
-        background: b.background, 
-        color: b.color, 
-        padding: '4px 12px', 
-        borderRadius: '20px', 
-        fontSize: '12px', 
-        display: 'inline-flex', 
-        alignItems: 'center', 
-        gap: '6px' 
-      }}>
-        <FontAwesomeIcon icon={b.icon} size="sm" />
+      <span style={{ background: b.background, color: b.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <FontAwesomeIcon icon={b.icon} size="sm" color={b.color} />
         {b.text}
       </span>
     );
   };
 
-  // Loader moderne
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: darkMode ? '#0f172a' : '#f8fafc' }}>
@@ -180,28 +173,13 @@ function TableauBordAdmin({ user, onLogout }) {
           }} />
           <p style={{ color: darkMode ? '#94a3b8' : '#475569', fontSize: '14px' }}>
             <FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: '8px' }} />
-            Chargement de votre tableau de bord...
+            Chargement du tableau de bord...
           </p>
-          <div style={{
-            width: '250px',
-            height: '3px',
-            background: darkMode ? '#334155' : '#e2e8f0',
-            borderRadius: '10px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '60%',
-              height: '100%',
-              background: 'linear-gradient(90deg, #9333ea, #ec4899, #06b6d4)',
-              animation: 'loading 1.5s ease-in-out infinite'
-            }} />
-          </div>
         </div>
         <style dangerouslySetInnerHTML={{
           __html: `
             @keyframes spin { 100% { transform: rotate(360deg); } }
             @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-            @keyframes loading { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
           `
         }} />
       </div>
@@ -222,6 +200,7 @@ function TableauBordAdmin({ user, onLogout }) {
       alignItems: 'center', 
       gap: '24px', 
       flexWrap: 'wrap',
+      justifyContent: 'space-between',
       background: darkMode ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
       backdropFilter: 'blur(12px)',
       borderRadius: '24px',
@@ -234,13 +213,10 @@ function TableauBordAdmin({ user, onLogout }) {
       fontSize: 'clamp(20px, 4vw, 24px)', 
       fontWeight: 'bold', 
       marginBottom: '4px', 
-      background: darkMode ? 'linear-gradient(135deg, #f1f5f9, #cbd5e1)' : colors.gradient1,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text'
+      color: darkMode ? '#ffffff' : '#1e293b'
     },
     profileEmail: { 
-      color: darkMode ? '#94a3b8' : '#475569', 
+      color: darkMode ? '#cbd5e1' : '#475569', 
       marginBottom: '8px', 
       fontSize: 'clamp(12px, 3vw, 14px)' 
     },
@@ -276,14 +252,11 @@ function TableauBordAdmin({ user, onLogout }) {
       fontSize: 'clamp(28px, 5vw, 36px)', 
       fontWeight: 'bold', 
       marginBottom: '8px', 
-      background: darkMode ? 'linear-gradient(135deg, #c084fc, #f472b6, #22d3ee)' : colors.gradient1,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text'
+      color: darkMode ? '#f1f5f9' : '#1e293b'
     },
     statLabel: { 
       fontSize: 'clamp(12px, 3vw, 14px)', 
-      color: darkMode ? '#94a3b8' : '#475569' 
+      color: darkMode ? '#94a3b8' : '#64748b' 
     },
     buttonGroup: { 
       display: 'flex', 
@@ -340,12 +313,12 @@ function TableauBordAdmin({ user, onLogout }) {
       padding: 'clamp(10px, 2vw, 14px)', 
       borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, 
       fontSize: 'clamp(12px, 2.5vw, 14px)', 
-      color: darkMode ? '#f1f5f9' : '#1e293b'
+      color: darkMode ? '#e2e8f0' : '#475569'
     },
     btnEdit: { background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
     btnDelete: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
     btnValidate: { background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '500' },
-    emptyState: { textAlign: 'center', padding: 'clamp(30px, 8vw, 48px)', color: darkMode ? '#94a3b8' : '#475569' },
+    emptyState: { textAlign: 'center', padding: 'clamp(30px, 8vw, 48px)', color: darkMode ? '#94a3b8' : '#64748b' },
     tabsContainer: { 
       display: 'flex', 
       gap: '8px', 
@@ -390,7 +363,7 @@ function TableauBordAdmin({ user, onLogout }) {
     programCaption: {
       fontSize: '14px',
       textAlign: 'center',
-      color: darkMode ? '#94a3b8' : '#475569',
+      color: darkMode ? '#94a3b8' : '#64748b',
       marginTop: '8px'
     },
     projetCard: {
@@ -415,29 +388,11 @@ function TableauBordAdmin({ user, onLogout }) {
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          @keyframes loading { 0% { width: 0%; } 50% { width: 80%; } 100% { width: 100%; } }
           @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-          .btn-shine {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-          }
-          .btn-shine::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
-          }
-          .btn-shine:hover::before {
-            left: 100%;
-          }
-          .btn-shine:hover {
-            transform: translateY(-2px);
-          }
+          .btn-shine { position: relative; overflow: hidden; transition: all 0.3s ease; }
+          .btn-shine::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
+          .btn-shine:hover::before { left: 100%; }
+          .btn-shine:hover { transform: translateY(-2px); }
           .stat-card:hover, .program-card:hover { transform: translateY(-5px); }
           .overflow-x-auto { overflow-x: auto; }
         `
@@ -446,20 +401,20 @@ function TableauBordAdmin({ user, onLogout }) {
       <Navbar user={currentUser} onLogout={onLogout} />
       
       <div style={styles.container}>
-        {/* Profile Card Admin */}
         <div style={styles.profileCard}>
-          <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} />
-          <div style={styles.profileInfo}>
-            <h1 style={styles.profileName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
-            <p style={styles.profileEmail}>{currentUser?.email}</p>
-            <span style={styles.profileBadge}>
-              <FontAwesomeIcon icon={faUserCircle} style={{ marginRight: '6px' }} /> 
-              Administrateur
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+            <AvatarManager user={currentUser} onAvatarUpdate={handleAvatarUpdate} />
+            <div style={styles.profileInfo}>
+              <h1 style={styles.profileName}>{currentUser?.firstName} {currentUser?.lastName}</h1>
+              <p style={styles.profileEmail}>{currentUser?.email}</p>
+              <span style={styles.profileBadge}>
+                <FontAwesomeIcon icon={faUserCircle} style={{ marginRight: '6px' }} /> 
+                Administrateur
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Programme Images */}
         <div style={styles.programCards}>
           <div className="program-card" style={styles.programCard}>
             <img src="/prog1.png" alt="Master Plan" style={styles.programImage} onError={(e) => e.target.style.display = 'none'} />
@@ -473,7 +428,6 @@ function TableauBordAdmin({ user, onLogout }) {
 
         <EarlyStageTimeline />
 
-        {/* Onglets */}
         <div style={styles.tabsContainer}>
           <button className="btn-shine" style={styles.tab(activeTab === 'dashboard')} onClick={() => setActiveTab('dashboard')}>
             <FontAwesomeIcon icon={faTachometerAlt} /> Tableau de bord
@@ -482,7 +436,7 @@ function TableauBordAdmin({ user, onLogout }) {
             <FontAwesomeIcon icon={faUsers} /> Porteurs ({porteurs.length})
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'projets')} onClick={() => setActiveTab('projets')}>
-            <FontAwesomeIcon icon={faBuilding} /> Projets à valider ({stats.projets})
+            <FontAwesomeIcon icon={faBuilding} /> Projets ({stats.projets})
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'soumissions')} onClick={() => setActiveTab('soumissions')}>
             <FontAwesomeIcon icon={faFileAlt} /> Soumissions ({stats.soumissions})
@@ -491,32 +445,22 @@ function TableauBordAdmin({ user, onLogout }) {
             <FontAwesomeIcon icon={faEye} /> Analyses IA
           </button>
           <button className="btn-shine" style={styles.tab(activeTab === 'scores')} onClick={() => setActiveTab('scores')}>
-            <FontAwesomeIcon icon={faChartLine} /> Scores porteurs
+            <FontAwesomeIcon icon={faChartLine} /> Scores
           </button>
         </div>
 
-        {/* Dashboard Content */}
         {activeTab === 'dashboard' && (
           <>
             <div style={styles.statsContainer}>
               <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('projets')}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.primary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <FontAwesomeIcon icon={faBuilding} size="2x" color={colors.primary} />
-                </div>
                 <div style={styles.statNumber}>{stats.projets}</div>
                 <div style={styles.statLabel}>Projets en attente</div>
               </div>
               <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('porteurs')}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: `${colors.secondary}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <FontAwesomeIcon icon={faUsers} size="2x" color={colors.secondary} />
-                </div>
                 <div style={styles.statNumber}>{stats.porteurs}</div>
                 <div style={styles.statLabel}>Porteurs actifs</div>
               </div>
               <div className="stat-card" style={styles.statCard} onClick={() => setActiveTab('soumissions')}>
-                <div style={{ width: 'clamp(50px, 10vw, 60px)', height: 'clamp(50px, 10vw, 60px)', background: '#f59e0b15', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <FontAwesomeIcon icon={faExclamationTriangle} size="2x" color="#f59e0b" />
-                </div>
                 <div style={styles.statNumber}>{stats.soumissions}</div>
                 <div style={styles.statLabel}>Soumissions en attente</div>
               </div>
@@ -530,7 +474,7 @@ function TableauBordAdmin({ user, onLogout }) {
                 <FontAwesomeIcon icon={faPaperPlane} /> Envoyer une tâche
               </button>
               <button className="btn-shine" onClick={() => setShowAssignerEtapes(true)} style={{ ...styles.actionBtn, ...styles.btnPurple }}>
-                <FontAwesomeIcon icon={faTasks} /> Assigner programme Early-Stage
+                <FontAwesomeIcon icon={faTasks} /> Assigner programme
               </button>
             </div>
 
@@ -539,20 +483,13 @@ function TableauBordAdmin({ user, onLogout }) {
           </>
         )}
 
-        {/* Porteurs Content */}
         {activeTab === 'porteurs' && (
           <div style={styles.infoCard}>
             <div style={styles.sectionTitle}>
               <FontAwesomeIcon icon={faUsers} /> Liste des porteurs
             </div>
             {porteurs.length === 0 ? (
-              <div style={styles.emptyState}>
-                <FontAwesomeIcon icon={faUsers} size="3x" style={{ opacity: 0.3, marginBottom: '16px' }} />
-                <p>Aucun porteur créé</p>
-                <button className="btn-shine" onClick={() => setShowCreationPorteur(true)} style={{ ...styles.btnValidate, marginTop: '16px' }}>
-                  <FontAwesomeIcon icon={faUserPlus} /> Créer un porteur
-                </button>
-              </div>
+              <div style={styles.emptyState}>Aucun porteur</div>
             ) : (
               <div className="overflow-x-auto">
                 <table style={styles.table}>
@@ -589,39 +526,24 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
-        {/* Projets Content - VERSION CORRIGEE */}
         {activeTab === 'projets' && (
           <div style={styles.infoCard}>
             <div style={styles.sectionTitle}>
-              <FontAwesomeIcon icon={faBuilding} /> Projets en attente de validation
+              <FontAwesomeIcon icon={faBuilding} /> Projets à valider
             </div>
             {projets.filter(p => p.statut === 'en_attente').length === 0 ? (
-              <div style={styles.emptyState}>
-                <FontAwesomeIcon icon={faCheck} size="3x" style={{ opacity: 0.3, marginBottom: '16px', color: '#10b981' }} />
-                <p>Aucun projet en attente de validation</p>
-                <p style={{ fontSize: '13px', marginTop: '8px' }}>Tous les projets ont été traités</p>
-              </div>
+              <div style={styles.emptyState}>Aucun projet en attente</div>
             ) : (
               projets.filter(p => p.statut === 'en_attente').map(p => (
                 <div key={p._id} style={styles.projetCard}>
                   <div style={styles.projetInfo}>
-                    <div style={styles.projetTitre}>
-                      <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: colors.primary }} />
-                      {p.titre || p.nomProjet}
-                    </div>
+                    <div style={styles.projetTitre}>{p.titre || p.nomProjet}</div>
                     <div style={styles.projetMeta}>
-                      <FontAwesomeIcon icon={faUsers} style={{ marginRight: '6px' }} />
                       Porteur: {p.porteurId?.firstName} {p.porteurId?.lastName}
-                      {p.porteurId?.email && <span style={{ marginLeft: '16px' }}>📧 {p.porteurId.email}</span>}
                     </div>
-                    {p.description && (
-                      <div style={{ ...styles.projetMeta, marginTop: '8px' }}>
-                        {p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description}
-                      </div>
-                    )}
                     <div style={{ marginTop: '8px' }}>{getStatutBadge(p.statut)}</div>
                   </div>
-                  <button className="btn-shine" onClick={() => handleOpenValidationProjet(p)} style={styles.btnValidate}>
+                  <button className="btn-shine" onClick={() => { setSelectedProjet(p); setShowValidationProjet(true); }} style={styles.btnValidate}>
                     <FontAwesomeIcon icon={faCheck} size="sm" /> Valider / Rejeter
                   </button>
                 </div>
@@ -630,19 +552,13 @@ function TableauBordAdmin({ user, onLogout }) {
           </div>
         )}
 
-        {/* Soumissions Content */}
         {activeTab === 'soumissions' && <ValidationDocument onValidate={loadAllData} />}
-
-        {/* ANALYSES IA Content */}
         {activeTab === 'analyses' && <AdminAnalysesIA />}
-
-        {/* Scores Content */}
         {activeTab === 'scores' && <ScoresPorteurs />}
       </div>
 
       <PiedDePage />
 
-      {/* Modals */}
       {showCreationPorteur && (
         <CreationPorteur 
           onClose={() => setShowCreationPorteur(false)} 
@@ -680,13 +596,8 @@ function TableauBordAdmin({ user, onLogout }) {
         />
       )}
       
-      {toast && (
-        <ToastNotification 
-          type={toast.type} 
-          message={toast.message} 
-          onClose={() => setToast(null)} 
-        />
-      )}
+      {toast && <ToastNotification type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      
     </div>
   );
 }
