@@ -4,8 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import Connexion from './pages/Connexion';
 import TableauBordPorteur from './pages/TableauBordPorteur';
 import TableauBordAdmin from './pages/TableauBordAdmin';
-import Calendrier from './composants/Calendrier';
-import SuiviEtapes from './composants/SuiviEtapes';
+import api from './utils/api';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -14,9 +13,13 @@ function App() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
+    
     if (storedUser && token && storedUser !== 'undefined') {
       try {
-        setUser(JSON.parse(storedUser));
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        // Mettre à jour le header axios
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
         console.error('Erreur parsing user:', error);
         localStorage.removeItem('user');
@@ -30,12 +33,16 @@ function App() {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    // Rediriger vers login
+    window.location.href = '/login';
   };
 
   if (loading) {
@@ -63,7 +70,10 @@ function App() {
     >
       <ThemeProvider>
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" /> : <Connexion onLogin={handleLogin} />} />
+          <Route 
+            path="/login" 
+            element={user ? <Navigate to="/" replace /> : <Connexion onLogin={handleLogin} />} 
+          />
           <Route 
             path="/" 
             element={
@@ -72,13 +82,11 @@ function App() {
                   <TableauBordAdmin user={user} onLogout={handleLogout} /> : 
                   <TableauBordPorteur user={user} onLogout={handleLogout} />
               ) : (
-                <Navigate to="/login" />
+                <Navigate to="/login" replace />
               )
             } 
           />
-          <Route path="/calendrier" element={user ? <Calendrier /> : <Navigate to="/login" />} />
-          <Route path="/etapes" element={user ? <SuiviEtapes /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ThemeProvider>
     </BrowserRouter>

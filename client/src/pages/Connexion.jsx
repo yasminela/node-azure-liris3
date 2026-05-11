@@ -4,10 +4,10 @@ import api from '../utils/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faEnvelope, faLock, faEye, faEyeSlash, faRocket, 
-  faChartLine, faUsers, faLightbulb, faArrowRight
+  faChartLine, faUsers, faLightbulb, faArrowRight, faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 
-function Connexion() {
+function Connexion({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +19,23 @@ function Connexion() {
   // Animation des particules
   const [particles, setParticles] = useState([]);
 
-  useEffect(() => {
+useEffect(() => {
+    // Vérifier si déjà connecté
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user && user !== 'undefined') {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/porteur');
+        }
+      } catch (e) {
+        console.error('Erreur parsing user:', e);
+      }
+    }
+    
     const newParticles = [];
     for (let i = 0; i < 50; i++) {
       newParticles.push({
@@ -32,33 +48,41 @@ function Connexion() {
       });
     }
     setParticles(newParticles);
-  }, []);
+  }, [navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  // Dans Connexion.jsx, assurez-vous que handleSubmit est comme ceci :
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  
+  try {
+    const response = await api.post('/auth/login', { email, password });
+    const { token, user } = response.data;
     
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/porteur');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
-    } finally {
-      setLoading(false);
+    console.log('✅ Connexion réussie:', user.email);
+    
+    // Appeler onLogin pour mettre à jour l'état dans App.jsx
+    if (onLogin) {
+      onLogin(user, token);
     }
-  };
+    
+    // Mettre à jour le header axios
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    
+    // Redirection immédiate avec navigate
+    if (user.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate('/porteur', { replace: true });
+    }
+    
+  } catch (err) {
+    setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
+    setLoading(false);
+  }
+};
 
   const styles = {
     container: {
