@@ -13,7 +13,8 @@ import {
   faTimes,
   faChevronDown,
   faChevronUp,
-  faBell
+  faBell,
+  faPlayCircle
 } from '@fortawesome/free-solid-svg-icons';
 
 function Navbar({ user, onLogout }) {
@@ -26,6 +27,7 @@ function Navbar({ user, onLogout }) {
   const [uploading, setUploading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const profileMenuRef = useRef(null);
   const notificationsMenuRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -62,6 +64,14 @@ function Navbar({ user, onLogout }) {
     setProfileMenuOpen(false);
     setNotificationsMenuOpen(false);
   }, [location]);
+
+  const openVideoDemo = () => {
+    setShowVideoModal(true);
+  };
+
+  const closeVideoModal = () => {
+    setShowVideoModal(false);
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -247,6 +257,17 @@ function Navbar({ user, onLogout }) {
       alignItems: 'center',
       gap: '16px'
     },
+    demoBtn: {
+      background: darkMode ? '#334155' : '#f1f5f9',
+      border: 'none',
+      borderRadius: '10px',
+      padding: '8px 12px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      transition: 'all 0.3s ease'
+    },
     themeBtn: {
       background: darkMode ? '#334155' : '#f1f5f9',
       border: 'none',
@@ -410,6 +431,49 @@ function Navbar({ user, onLogout }) {
       fontSize: '22px',
       cursor: 'pointer',
       color: darkMode ? '#f1f5f9' : '#475569'
+    },
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.95)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10000,
+      cursor: 'pointer'
+    },
+    modalContent: {
+      position: 'relative',
+      width: '90%',
+      maxWidth: '1000px',
+      background: '#000',
+      borderRadius: '16px',
+      overflow: 'hidden'
+    },
+    closeModalBtn: {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      background: 'rgba(0,0,0,0.7)',
+      border: 'none',
+      borderRadius: '50%',
+      width: '40px',
+      height: '40px',
+      cursor: 'pointer',
+      color: 'white',
+      fontSize: '20px',
+      zIndex: 10,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    iframe: {
+      width: '100%',
+      height: '500px',
+      border: 'none'
     }
   };
 
@@ -423,6 +487,12 @@ function Navbar({ user, onLogout }) {
           </div>
 
           <div style={styles.desktopMenu}>
+            {/* Bouton Démo Vidéo */}
+            <button className="btn-shine" onClick={openVideoDemo} style={styles.demoBtn}>
+              <FontAwesomeIcon icon={faPlayCircle} style={{ color: '#ef4444' }} />
+              <span style={{ fontSize: '13px', fontWeight: '500', color: darkMode ? '#f1f5f9' : '#1e293b' }}>Démo</span>
+            </button>
+
             <button onClick={toggleDarkMode} style={styles.themeBtn}>
               <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
             </button>
@@ -455,7 +525,7 @@ function Navbar({ user, onLogout }) {
               )}
             </div>
 
-            {/* PROFIL MENU - SOLUTION FINALE CORRECTE */}
+            {/* PROFIL MENU */}
             <div style={styles.profileContainer} ref={profileMenuRef}>
               <button 
                 onClick={() => {
@@ -581,12 +651,35 @@ function Navbar({ user, onLogout }) {
               {hasAvatar ? <img src={avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} /> : <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{getInitials()}</div>}
               <div><div style={{ fontWeight: 'bold' }}>{currentUser?.firstName} {currentUser?.lastName}</div><div style={{ fontSize: '11px', opacity: 0.7 }}>{currentUser?.email}</div></div>
             </div>
+            <div className="btn-shine" style={styles.mobileMenuItem} onClick={openVideoDemo}>
+              <FontAwesomeIcon icon={faPlayCircle} /> Démo vidéo
+            </div>
             <div style={styles.mobileMenuItem} onClick={handleChangePhoto}><FontAwesomeIcon icon={faCamera} /> Changer la photo</div>
             {hasAvatar && <div style={styles.mobileMenuItem} onClick={handleDeletePhoto}><FontAwesomeIcon icon={faTrashAlt} /> Supprimer la photo</div>}
             <div style={styles.mobileMenuItem} onClick={toggleDarkMode}><FontAwesomeIcon icon={darkMode ? faSun : faMoon} /> {darkMode ? 'Mode clair' : 'Mode sombre'}</div>
             <div style={{ ...styles.mobileMenuItem, marginTop: 'auto', color: '#ef4444' }} onClick={handleLogout}><FontAwesomeIcon icon={faSignOutAlt} /> Déconnexion</div>
           </div>
         </>
+      )}
+
+      {/* Modal Vidéo Démo - Google Drive */}
+      {showVideoModal && (
+        <div style={styles.modalOverlay} onClick={closeVideoModal}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button style={styles.closeModalBtn} onClick={closeVideoModal}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <iframe
+              src="https://drive.google.com/file/d/1sclBEdnXmzq-8VJfIAtxs2SZBPfDr9XG/preview"
+              width="100%"
+              height="500"
+              allow="autoplay"
+              allowFullScreen
+              style={styles.iframe}
+              title="Démo Incubiny"
+            />
+          </div>
+        </div>
       )}
 
       <style dangerouslySetInnerHTML={{

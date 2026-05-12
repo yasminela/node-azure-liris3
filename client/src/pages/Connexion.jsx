@@ -19,7 +19,7 @@ function Connexion({ onLogin }) {
   // Animation des particules
   const [particles, setParticles] = useState([]);
 
-useEffect(() => {
+  useEffect(() => {
     // Vérifier si déjà connecté
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
@@ -50,39 +50,34 @@ useEffect(() => {
     setParticles(newParticles);
   }, [navigate]);
 
-  // Dans Connexion.jsx, assurez-vous que handleSubmit est comme ceci :
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  
-  try {
-    const response = await api.post('/auth/login', { email, password });
-    const { token, user } = response.data;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    console.log('✅ Connexion réussie:', user.email);
-    
-    // Appeler onLogin pour mettre à jour l'état dans App.jsx
-    if (onLogin) {
-      onLogin(user, token);
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response.data;
+      
+      console.log('✅ Connexion réussie:', user.email);
+      
+      if (onLogin) {
+        onLogin(user, token);
+      }
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/porteur', { replace: true });
+      }
+      
+    } catch (err) {
+      setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
+      setLoading(false);
     }
-    
-    // Mettre à jour le header axios
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    
-    // Redirection immédiate avec navigate
-    if (user.role === 'admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate('/porteur', { replace: true });
-    }
-    
-  } catch (err) {
-    setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
-    setLoading(false);
-  }
-};
+  };
 
   const styles = {
     container: {
@@ -94,7 +89,6 @@ const handleSubmit = async (e) => {
       overflow: 'hidden',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     },
-    // Cercles flottants
     circle1: {
       position: 'absolute',
       top: '-20%',
@@ -125,7 +119,6 @@ const handleSubmit = async (e) => {
       background: 'rgba(255,255,255,0.05)',
       animation: 'float3 12s ease-in-out infinite'
     },
-    // Particules
     particle: (left, top, size, delay, duration) => ({
       position: 'absolute',
       width: `${size}px`,
@@ -137,7 +130,6 @@ const handleSubmit = async (e) => {
       animation: `floatParticle ${duration}s ease-in-out infinite`,
       animationDelay: `${delay}s`
     }),
-    // Carte
     card: {
       position: 'relative',
       zIndex: 10,
@@ -211,7 +203,11 @@ const handleSubmit = async (e) => {
       fontSize: '14px',
       outline: 'none',
       transition: 'all 0.3s',
-      backgroundColor: '#f8fafc'
+      backgroundColor: '#f8fafc',
+      color: '#1e293b'  // ← AJOUT : couleur du texte en noir/gris foncé
+    },
+    inputPlaceholder: {
+      color: '#94a3b8'  // ← AJOUT : couleur du placeholder
     },
     passwordToggle: {
       position: 'absolute',
@@ -298,6 +294,10 @@ const handleSubmit = async (e) => {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102,126,234,0.3);
           }
+          /* Style pour le placeholder */
+          input::placeholder {
+            color: #94a3b8;
+          }
         `
       }} />
 
@@ -380,7 +380,7 @@ const handleSubmit = async (e) => {
             disabled={loading}
           >
             {loading ? (
-              <>Connexion en cours...</>
+              <><FontAwesomeIcon icon={faSpinner} spin /> Connexion en cours...</>
             ) : (
               <>
                 <FontAwesomeIcon icon={faRocket} />
